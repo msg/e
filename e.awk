@@ -139,6 +139,7 @@ function add_environment(entry, name, value, aliasecho)
 {
   aliaseval("es" entry, "store " entry);
   aliaseval("en" entry, "name " entry);
+  aliaseval("ev" entry, "value " entry);
 
   setenv("e" entry, value);
   setenv("e" eproj "_e" entry, value);
@@ -157,6 +158,7 @@ function delete_environment(entry, name, value)
 {
   unalias("es" entry);
   unalias("en" entry);
+  unalias("ev" entry);
 
   unalias("e" entry);
   unsetenv("e" entry);
@@ -283,22 +285,27 @@ function rmproj(arg,  name)
   }
 }
 
-function store(arg,  entry, value)
+function add_value(entry, value)
 {
-  entry = ARGV[arg++];
-  value = ARGV[arg++];
   if (value && enames[entry] == value) {
     echo(sprintf("invalid value '%s' cannot be same as name", value));
     return;
-  }
-  for (; arg<ARGC; arg++) {
-    value = value " " ARGV[arg];
   }
   delete_environment(entry, enames[entry], evalues[entry]);
   evalues[entry] = value;
   add_environment(entry, enames[entry], evalues[entry]);
   write_project(eprojfile, evalues, enames);
   printf("\n");
+}
+
+function store(arg,  entry, value)
+{
+  entry = ARGV[arg++];
+  value = ARGV[arg++];
+  for (; arg<ARGC; arg++) {
+    value = value " " ARGV[arg];
+  }
+  add_value(entry, value);
 }
 
 function isreserved(value)
@@ -309,7 +316,7 @@ function isreserved(value)
       return command;
     }
   }
-  split("e es en", leaders)
+  split("e es en ev", leaders)
   for (i=0; i<emax; i++) {
     for (l in leaders) {
       if (leaders[l] i == value) {
@@ -331,27 +338,44 @@ function remove_name(name,  i)
   }
 }
 
-function name(arg,  entry, newname, i)
+function add_name(entry, name,  reserved)
 {
-  entry = ARGV[arg++];
-  newname = ARGV[arg++];
   # validate name
-  if (newname && evalues[entry] == newname) {
-    echo(sprintf("invalid name '%s' cannot be same as value", newname));
+  if (name && evalues[entry] == name) {
+    echo(sprintf("invalid name '%s' cannot be same as value", name));
     return;
   }
-  reserved = isreserved(newname);
+  reserved = isreserved(name);
   if (reserved) {
     echo(sprintf("invalid name '%s' for entry %d is reserved",
 	  reserved, entry));
     return
   }
-  remove_name(newname);
+  remove_name(name);
   delete_environment(entry, enames[entry], evalues[entry]);
-  enames[entry] = newname;
+  enames[entry] = name;
   add_environment(entry, enames[entry], evalues[entry]);
   write_project(eprojfile, evalues, enames);
   printf("\n");
+}
+
+function name(arg,  entry, newname, i)
+{
+  entry = ARGV[arg++];
+  newname = ARGV[arg++];
+  add_name(entry, newname);
+}
+
+function value(arg,  entry, name, val)
+{
+  entry = ARGV[arg++];
+  name = ARGV[arg++];
+  val = ARGV[arg++];
+  for (; arg<ARGC; arg++) {
+    val = val " " ARGV[arg];
+  }
+  add_value(entry, val);
+  add_name(entry, name);
 }
 
 function eval(arg,  entry, e, i)
@@ -450,21 +474,23 @@ function help(arg)
   printf(CY "erp" NO " " GR "<proj>" NO ":          %s\n",
       "remove proj (cannot be current)");
   printf(CY "es" NO "," CY "es" NO "["GR"0-#"NO"] "GR"value"NO":    %s\n",
-      "store value to entries 0-# (es=es0) (empty clears)");
+      "store value to slot 0-# (es=es0) (empty clears)");
   printf(CY "en" NO "," CY "en" NO "["GR"0-#"NO"] "GR"name"NO":     %s\n",
-      "make environment variable name point to entry");
+      "make environment variable name point to slot");
+  printf(CY "ev" NO "," CY "ev" NO "["GR"0-#"NO"] "GR"name val"NO": %s\n",
+      "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
-      "evaluate/execute entry with args (e=e0)");
+      "evaluate/execute slot value with args (e=e0)");
   printf(CY "el" NO ":                  %s\n",
-      "list all entries titles by current proj");
+      "list all slots titles by current proj");
   printf(CY "em" NO ":                  %s\n",
       "list env to dir mapping of current proj");
   printf(CY "ex" NO " " GR "from to" NO ":          %s\n",
-      "exchange entries from and to");
+      "exchange slots from and to");
   printf(CY "eu" NO " [" GR "num" NO "]:            %s\n",
-      "rotate entries up 1 or num positions");
+      "rotate slots up 1 or num positions");
   printf(CY "ew" NO " [" GR "num" NO "]:            %s\n",
-      "rotate entries up 1 or num positions");
+      "rotate slots up 1 or num positions");
   printf(CY "ei" NO ":                  %s\n",
       "(re)initialize env and alises");
   printf(CY "eq" NO ":                  %s\n",
@@ -491,7 +517,8 @@ function init(arg,  i, projs)
   aliaseval("ew", "rotate down");
   aliaseval("ec", "clear");
   alias("es", "es0 $*");
-  alias("en", "en0");
+  alias("en", "en0 $*");
+  alias("ev", "ev0 $*");
 
   projects_list(projs)
   for(i in projs) {
@@ -570,6 +597,8 @@ BEGIN {
     store(arg);
   } else if(cmd == "name") {
     name(arg);
+  } else if (cmd == "value") {
+    value(arg);
   } else if(cmd == "eval") {
     eval(arg);
   } else if(cmd == "list") {

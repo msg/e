@@ -278,7 +278,7 @@ stooges:
 24: $stooges/doc                                                 ($doc)
 25: --- ssh hosts ---                                              - 25 -
 26: larry.domain.com                                             ($larry)
-27: moe.otherdomain.com                                            - 27 -
+27: moe.otherdomain.com                                          ($moe)
 28: curly.thirddomain.com                                        ($curly)
 29:                                                                - 29 -
 

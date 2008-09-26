@@ -162,7 +162,7 @@ function delete_environment(entry, name, value)
   unsetenv("e" entry);
   unsetenv("e" eproj "_e" entry);
   if (name) {
-    unalias("e" name);
+    unalias(name);
     unsetenv("e" name);
     unsetenv("e" eproj "_e" entry);
   }
@@ -287,6 +287,10 @@ function store(arg,  entry, value)
 {
   entry = ARGV[arg++];
   value = ARGV[arg++];
+  if (value && enames[entry] == value) {
+    echo(sprintf("invalid value '%s' cannot be same as name", value));
+    return;
+  }
   for (; arg<ARGC; arg++) {
     value = value " " ARGV[arg];
   }
@@ -332,6 +336,10 @@ function name(arg,  entry, newname, i)
   entry = ARGV[arg++];
   newname = ARGV[arg++];
   # validate name
+  if (newname && evalues[entry] == newname) {
+    echo(sprintf("invalid name '%s' cannot be same as value", newname));
+    return;
+  }
   reserved = isreserved(newname);
   if (reserved) {
     echo(sprintf("invalid name '%s' for entry %d is reserved",
@@ -530,7 +538,7 @@ BEGIN {
   CY="\x1b[36;01m"
 
   EMAXDEFAULT=30
-  split("eh el em ei eq ep erp ex eu ew es en", ecommands) 
+  split("eh el em ei eq ep erp ex eu ew es en e", ecommands) 
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";

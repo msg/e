@@ -457,7 +457,7 @@ function help(arg)
       "exchange entries from and to");
   printf(CY "eu" NO " [" GR "num" NO "]:            %s\n",
       "rotate entries up 1 or num positions");
-  printf(CY "ed" NO " [" GR "num" NO "]:            %s\n",
+  printf(CY "ew" NO " [" GR "num" NO "]:            %s\n",
       "rotate entries up 1 or num positions");
   printf(CY "ei" NO ":                  %s\n",
       "(re)initialize env and alises");
@@ -465,6 +465,7 @@ function help(arg)
       "remove env and alises");
   printf(CY "eh" NO ":                  %s\n",
       "print this help message");
+  printf("  available single letters for e command: abcefghjknortvyz");
 }
 
 function init(arg,  i, projs)

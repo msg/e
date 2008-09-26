@@ -8,7 +8,7 @@
 
 function isbourne(shell)
 {
-  return shell == "zsh" || shell == "bash" || shell = "sh";
+  return shell == "zsh" || shell == "bash" || shell == "sh";
 }
 
 function iscsh(shell)
@@ -21,12 +21,12 @@ function setformats(shell)
   if (isbourne(shell)) {
     esetenvfmt = "export %s='%s'\n";
     eunsetenvfmt = "unset %s\n";
-    ealiasfmt = "%s() {\n  %s/e.awk %s\n}\n";
+    ealiasfmt = "%s() {\n  %s \n}\n";
     eunaliasfmt = eunsetenvfmt;
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
-    ealiasfmt = "alias %s \"%s/e.awk %s\";";
+    ealiasfmt = "alias %s \"%s\";";
     eunaliasfmt = "unalias %s;";
   }
 }
@@ -52,14 +52,23 @@ function aliaseval(name, value)
     printf("%s() {\n  eval \"$(%s/e.awk %s $*)\"\n}\n",
 	   name, ehome, value);
   } else if (iscsh(eshell)) {
-    printf("set x=(eval \\`%s/e.awk %s \\!\\*\\`);alias %s \"$x\";",
+    printf("set x=(eval \\\"\\`%s/e.awk %s \\!\\*\\`\\\");alias %s \"$x\";",
 	   ehome, value, name);
   }
 }
 
 function alias(name, value)
 {
-  printf(ealiasfmt, name, ehome, value);
+  printf(ealiasfmt, name, value);
+}
+
+function aliaseawk(name, value)
+{
+  if (isbourne(eshell)) {
+    alias(name, sprintf("%s/e.awk %s $*", ehome, value));
+  } else if (iscsh(eshell)) {
+    alias(name, sprintf("%s/e.awk %s \\!\\*", ehome, value));
+  }
 }
 
 function unalias(name)
@@ -131,18 +140,23 @@ function help(arg)
       "print this help message");
 }
 
-function addentry(entry,  name, value)
+function addentry(entry,  name, value, aliasecho)
 {
   name = enames[entry]
   value = evalues[entry]
-  aliaseval("e" entry, "eval " entry);
+
+  aliasecho = sprintf("echo \"%s\"; eval \"%s\"", value, value);
+  aliaseval("es" entry, "store " entry);
+  aliaseval("en" entry, "name " entry);
+
   setenv("e" entry, value);
+  alias("e" entry, aliasecho);
   if (entry == 0) {
-    aliaseval("e", "eval 0");
+    alias("e", aliasecho);
   }
   if (name != "") {
     setenv(name, value);
-    aliaseval("e" name, "eval " entry);
+    alias("e" name, aliasecho);
   }
 }
 
@@ -150,6 +164,10 @@ function deleteentry(entry,  name, value)
 {
   name = enames[entry]
   value = evalues[entry]
+
+  unalias("es" entry);
+  unalias("en" entry);
+
   unalias("e" entry);
   if (name) {
     unalias("e" name);
@@ -160,54 +178,10 @@ function deleteentry(entry,  name, value)
   }
 }
 
-function init(arg,  i)
-{
-  eshell = ARGV[arg++];
-  setformats(eshell);
-  setenv("ESHELL", eshell);
-  alias("eh", "help");
-  alias("el", "list");
-  alias("em", "mapping");
-  aliaseval("ep", "proj");
-  aliaseval("eq", "quit " shell);
-  aliaseval("erp", "rmproj");
-  aliaseval("ex", "exchange");
-  aliaseval("eu", "rotate up");
-  aliaseval("ew", "rotate down");
-  aliaseval("ec", "clear");
-  aliaseval("es", "store 0");
-  aliaseval("en", "name 0");
-
-  for(i=0; i<emax; i++) {
-    aliaseval("es" i, "store " i);
-    aliaseval("en" i, "name " i);
-    addentry(i);
-  }
-
-  if (iscsh(shell)) {
-    unsetenv("x");
-  }
-}
-
-function quit(arg,  shell, i, efmt)
-{
-  shell = ARGV[arg++];
-  for (command in ecommands) {
-    unalias(ecommands[command])
-  }
-  for (i=0; i<emax; i++) {
-    unalias("es" i, "store " i);
-    unalias("en" i, "name " i);
-    deleteentry(i);
-  }
-  unsetenv("ESHELL")
-  printf("\n");
-}
-
 function listprojs(  projnm, leader)
 {
   FS="/";
-  while (sprintf("echo %s/*.project", ehome) |getline) {
+  while (sprintf("ls %s/*.project", ehome) |getline) {
     projnm=$NF
     gsub(".project", "", projnm);
     if (eproj == projnm) {
@@ -251,13 +225,15 @@ function resizeproj(mx)
       if (evalues[emax-1]) {
         break;
       }
-      delete evalues[emax];
-      delete enames[emax];
+      deleteentry(emax-1)
+      delete evalues[emax-1];
+      delete enames[emax-1];
     }
   } else {
     for (;emax < mx; emax++) {
       evalues[emax] = "";
       enames[emax] = "";
+      addentry(emax)
     }
   }
   writeproj(evalues, enames);
@@ -441,6 +417,47 @@ function rotate(arg,  direction, positions, start, new, newvalues, newnames)
     addentry(i);
   }
   writeproj(evalues, enames);
+}
+
+function init(arg,  i)
+{
+  eshell = ARGV[arg++];
+  setformats(eshell);
+  setenv("ESHELL", eshell);
+
+  aliaseawk("eh", "help");
+  aliaseawk("el", "list");
+  aliaseawk("em", "mapping");
+  aliaseval("ep", "proj");
+  aliaseval("eq", "quit " shell);
+  aliaseval("erp", "rmproj");
+  aliaseval("ex", "exchange");
+  aliaseval("eu", "rotate up");
+  aliaseval("ew", "rotate down");
+  aliaseval("ec", "clear");
+  alias("es", "es0");
+  alias("en", "en0");
+
+  for(i=0; i<emax; i++) {
+    addentry(i);
+  }
+
+  if (iscsh(shell)) {
+    unsetenv("x");
+  }
+}
+
+function quit(arg,  shell, i, efmt)
+{
+  shell = ARGV[arg++];
+  for (command in ecommands) {
+    unalias(ecommands[command])
+  }
+  for (i=0; i<emax; i++) {
+    deleteentry(i);
+  }
+  unsetenv("ESHELL")
+  printf("\n");
 }
 
 BEGIN {

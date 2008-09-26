@@ -371,6 +371,8 @@ function list(arg,  i, proj)
     printf(CY "%2d" NO ": %-60s ", i, evalues[i]);
     if (enames[i]) {
       printf("(" CY "$%s" NO ")", enames[i]);
+    } else {
+      printf("  - " CY "%d" NO " -", i);
     }
     printf("\n");
   }

@@ -79,7 +79,7 @@ function set_formats(shell)
     esetenvfmt = "export %s='%s'\n";
     eunsetenvfmt = "unset %s\n";
     ealiasfmt = "%s() {\n  %s \n}\n";
-    eunaliasfmt = eunsetenvfmt;
+    eunaliasfmt = "unset -f %s\n";;
     ealiasechofmt = "echo \"%s $*\"; eval \"%s $*\"";
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
@@ -476,9 +476,9 @@ function init(arg,  i, projs)
   aliaseawk("eh", "help");
   aliaseawk("el", "list");
   aliaseawk("em", "mapping");
+  aliaseval("ei", "init " eshell);
+  aliaseval("eq", "quit " eshell);
   aliaseval("ep", "proj");
-  aliaseval("ei", "init " shell);
-  aliaseval("eq", "quit " shell);
   aliaseval("erp", "rmproj");
   aliaseval("ex", "exchange");
   aliaseval("eu", "rotate up");
@@ -504,8 +504,9 @@ function init(arg,  i, projs)
 function quit(arg,  shell, i, projs)
 {
   shell = ARGV[arg++];
-  for (command in ecommands) {
-    unalias(ecommands[command])
+  set_formats(shell);
+  for (i in ecommands) {
+    unalias(ecommands[i])
   }
   for (i=0; i<emax; i++) {
     delete_environment(i, enames[i], evalues[i]);
@@ -531,7 +532,7 @@ BEGIN {
   CY="\x1b[36;01m"
 
   EMAXDEFAULT=30
-  split("eh el em ei eq erp ep ex eu ed ec es en", ecommands) 
+  split("eh el em ei eq ep erp ex eu ew ec es en", ecommands) 
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";

@@ -149,7 +149,7 @@ function add_environment(entry, name, value, aliasecho)
   if (name != "") {
     setenv(name, value);
     setenv("e" eproj "_" name, value);
-    alias("e" name, sprintf(ealiasechofmt, value, value));
+    alias(name, sprintf(ealiasechofmt, value, value));
   }
 }
 
@@ -301,14 +301,14 @@ function isreserved(value)
 {
   for (i in ecommands) {
     command = ecommands[i]
-    if (command == "e" value) {
+    if (command == value) {
       return command;
     }
   }
   split("e es en", leaders)
   for (i=0; i<emax; i++) {
     for (l in leaders) {
-      if (leaders[l] i == "e" value) {
+      if (leaders[l] i == value) {
 	return leaders[l] i;
       }
     }
@@ -336,7 +336,6 @@ function name(arg,  entry, newname, i)
   if (reserved) {
     echo(sprintf("invalid name '%s' for entry %d is reserved",
 	  reserved, entry));
-    echo("available single letters for e command: abc efgh jk no r t v yz");
     return
   }
   remove_name(newname);
@@ -531,7 +530,7 @@ BEGIN {
   CY="\x1b[36;01m"
 
   EMAXDEFAULT=30
-  split("eh el em ei eq ep erp ex eu ew ec es en", ecommands) 
+  split("eh el em ei eq ep erp ex eu ew es en", ecommands) 
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";

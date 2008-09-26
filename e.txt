@@ -93,6 +93,33 @@ important one is 'eh'.  'eh' will show the e commands available.
   must be unique.  If another slot contains <name>, it will be removed
   and moved to the new slot.
 
+  The env also contain a per project variables.  They can be referenced
+  $e<project-name>_<var>, where var is an actual name of a slot or e# 
+  referencing the index.  The evaluation commands are only setup for the
+  current project.
+
+  Evaluation of e slots:
+
+  e builds extra commands allowing the evaluation of the slot values.
+  'e#' evaluates (executes) the slot value referenced at # in the
+  current shell context.  This is a powerful feature allowing creation
+  of often executed commands can be setup in a slot.  Not all slots have
+  evaluatable values, but e has no way of knowing.  So, it sets up the
+  'e#' command reguardless.  Because it's executed in the current shell
+  context, things like 'cd' will work as expected (which is a large part
+  of how I use it).
+
+  e also creates 'e<name>' commands referencing the names of slots for
+  convenience.  e will not allow <name> to override the normal e
+  commands.  The 'en#' command will display an error message if a
+  'e<name>' is a normal command.
+
+  Because e uses the shell's "eval" builtin, it will only evaluate
+  one or two levels of env variable replacement.  If you try more
+  then 2 levels of env variable references in slot values, it may
+  not work correctly.  It's a limitation of shell and portability
+  between all the shells supported.
+
   Other slot management commands:
 
   The command 'el [<project>]' will list the <project> slots.  If
@@ -115,9 +142,11 @@ important one is 'eh'.  'eh' will show the e commands available.
 
   Miscellaneous commands:
 
-  'wq' removes all e commands, env variables from the current shell.
+  'ei' reinitializes all e commands, env variables from the current shell.
 
-  'wh' again shows the normal e commands available.
+  'eq' removes all e commands, env variables from the current shell.
+
+  'eh' again shows the normal e commands available.
 
 NOTE: the project files store slots one per line with the value separated
       by a ','.  When setting the value or name of a slot, they should
@@ -158,18 +187,19 @@ Line by line explanation:
     This is just used as a comment for slots 21-24.  This is helpful
     so when listing the e project, sections can have separators.  There
     will be an env var $e20 set to '--- directories ---'.
-  3 Create an e env var at slot 21 containing '$HOME/proj/stooges'.
-    The reason for the single quotes (') is so that the shell evaluates
-    $HOME each time.  This slot it's probably not as important but
-    the next ones are.  There will be an env var $e21 set to
-    '$HOME/proj/stooges'.  It also creates a shell command e21, though
-    it will cause a shell error.  It's probably not useful for this
-    entry, but other values can be set to probably shell syntax and
-    allow them to be executed.
+  3 Create an e env var at slot 21 containing $HOME/proj/stooges.
+    This slot it's probably not as important but the next ones are.
+    There will be an env var $e21 set to $HOME/proj/stooges.  It also
+    creates a shell command e21, though it will cause a shell error.
+    It's probably not useful for this entry, but other values can be
+    set to probably shell syntax and allow them to be executed.  There
+    are no "'" around the slot so $HOME gets replace before entered
+    into the slot because e has limits to the number of env vars levels
+    that can be replaced during evaluation.
   4 Name slot 21 to 'stooges'.  This command also creates $stooges
     with the slot value set in line 3.
   5 Create an e env var at slot 22 containing '$stooges/include'.  Now
-    the quotes are more important so env var can be evaluated in the
+    the quotes are important so env var can be evaluated in the
     shell properly.  Plus, if slot 21 (named stooges) changes, this slot
     will not have to be changed.
   6 Name slot 22 to 'include'.  The shell now has an env var $include.
@@ -215,7 +245,7 @@ Line by line explanation:
 These created commands can also take parameters from the command line
 which makes it vary configurable.  For example:
 
-  # $smoe ls proj
+  # esmoe ls proj
 
 will ssh to moe and run 'ls proj'.  It just appends the arguments onto
 the command before execution.

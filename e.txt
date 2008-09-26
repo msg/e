@@ -71,10 +71,10 @@ important one is 'eh'.  'eh' will show the e commands available.
   Environment variables and slots:
 
   Each slot in a project contains a value and possibly a name.  Slots
-  are managed via the 'es', 'es#', 'en' or 'en#'.  The 'es' and 'en'
-  commands work on slot 0.  They useful when a command is evaluated
-  very frequently.   There are several other commands for managing
-  several slots discussed below. 
+  are managed via the 'es', 'es#', 'en', 'en#', 'ev', and 'ev#'.  The
+  'es', 'en' and 'ev' commands work on slot 0.  They useful when a command
+  is evaluated very frequently.   There are several other commands for
+  managing several slots discussed below. 
 
   The 'es# <value>' store <value> into slot #.  'es#' creates several shell
   environment settings.  First it creates an $e# env variable set to
@@ -93,6 +93,9 @@ important one is 'eh'.  'eh' will show the e commands available.
   must be unique.  If another slot contains <name>, it will be removed
   and moved to the new slot.
 
+  'ev# <name> <value>' is a convience command allowing the setting of
+  slot name and slot value simultaneously.
+
   The env also contain a per project variables.  They can be referenced
   $e<project-name>_<var>, where var is an actual name of a slot or e# 
   referencing the index.  The evaluation commands are only setup for the
@@ -109,10 +112,10 @@ important one is 'eh'.  'eh' will show the e commands available.
   context, things like 'cd' will work as expected (which is a large part
   of how I use it).
 
-  e also creates 'e<name>' commands referencing the names of slots for
+  e also creates '<name>' commands referencing the names of slots for
   convenience.  e will not allow <name> to override the normal e
   commands.  The 'en#' command will display an error message if a
-  'e<name>' is a normal command.
+  '<name>' matches a an e command.
 
   Because e uses the shell's "eval" builtin, it will only evaluate
   one or two levels of env variable replacement.  If you try more
@@ -167,17 +170,12 @@ line (# <text> is shell prompt and text to execute)
    4  # en21 stooges
    5  # es22 '$stooges/include'
    6  # en22 include
-   7  # es23 '$stooges/src'
-   8  # en23 src
-   9  # es24 '$stooges/doc'
-  10  # en24 doc
-  11  # es25 --- ssh hosts ---
-  12  # es26 larry.domain.com
-  13  # en26 larry
-  14  # es27 moe.otherdomain.com
-  15  # en27 moe
-  16  # es28 curly.thirddomain.com
-  17  # en28 curly
+   7  # ev23 src '$stooges/src'
+   8  # ev24 doc '$stooges/doc'
+   9  # es25 --- ssh hosts ---
+  10  # ev26 larray larry.domain.com
+  11  # ev27 moe moe.otherdomain.com
+  12  # ev28 curly curly.thirddomain.com
 
 Line by line explanation:
   1 Create a e project called 'stooges' with 20 entries.  If the 20 was
@@ -204,10 +202,10 @@ Line by line explanation:
     will not have to be changed.
   6 Name slot 22 to 'include'.  The shell now has an env var $include.
     This can be used in interactive commands as well as shell functions.
-  7-10 This sets up slots 23 and 24 with names 'src' and 'doc' similar
+  7-8 This sets up slots 23 and 24 with names 'src' and 'doc' similar
     to steps 5 and 6.
-  11 Create another comment slot for ssh hosts the same as step 2.
-  12-17 Setup other slots for the ssh hosts.
+  9 Create another comment slot for ssh hosts the same as step 2.
+  10-12 Setup other slots for the ssh hosts.
 
 All the entries created above will be used for environment variables.
 Now, let's create slots that will be used for execution of commands.
@@ -219,33 +217,29 @@ command can be evaluated with a single keystroke 'e'.
 line (# <text> is shell prompt and text to execute) 
    1  # es5 'ssh $moe'
    2  # en5 smoe
-   3  # es6 'ssh $larry'
-   4  # en6 slarry
-   5  # es7 'ssh $curly'
-   6  # en7 scurly
-   7  # es1 'cd $include'
-   8  # en1 cin
-   9  # es2 'cd $src'
-  10  # en2 csrc
-  11  # es3 'cd $doc'
-  12  # en3 cdoc
+   3  # ev6 slarray 'ssh $larry'
+   4  # ev7 scurly 'ssh $curly'
+   5  # es1 'cd $include'
+   6  # en1 cin
+   7  # ev2 csrc 'cd $src'
+   9  # ev3 cdoc 'cd $doc'
 
 Line by line explanation:
-  1-6 Setup ssh commands with names matching the host names with a
+  1-4 Setup ssh commands with names matching the host names with a
       leading 's' prepended.  The names aren't really required, they are
       used as an example.  You can use them by typing 'eval $smoe' or
       'esmoe' at the shell prompt.  But it's much faster to just type
       'e5'.  What's nice is you can use any of the commands to your 
       reference.
-  7-12 Setup cd commands with names matching the stored directory names
+  5-9 Setup cd commands with names matching the stored directory names
       with a leading 'c' prepended.  Just like the ssh commands described
-      above, there are several ways to 'cd' to the directories: '$cin',
-      'ecin', or 'e1'.  Take your pick.
+      above, there are several ways to 'cd' to the directories: 'eval $cin',
+      'cin', or 'e1'.  Take your pick.
 
 These created commands can also take parameters from the command line
 which makes it vary configurable.  For example:
 
-  # esmoe ls proj
+  # smoe ls proj
 
 will ssh to moe and run 'ls proj'.  It just appends the arguments onto
 the command before execution.
@@ -256,37 +250,39 @@ If 'el' is executed the output is colorized and looks like:
 
 line (# <text> is shell prompt and text to execute) 
    1  # el
-   2  stooges:
-   3  0:
-   4  1: cd $include                                                  ($cin)
-   5  2: cd $src                                                      ($csrc)
-   6  3: cd $doc                                                      ($cdoc)
-   7  4:
-   8  5: ssh $moe                                                     ($smoe)
-   9  6: ssh $larry                                                   ($slarry)
-  10  7: ssh $curly                                                   ($scurly)
-  11  8:
-  12  9:
-  13  10:
-  14  11:
-  15  12:
-  16  13:
-  17  14:
-  18  15:
-  19  16:
-  20  17:
-  21  18:
-  22  19:
-  23  20: --- directories ---
-  24  21: /home/msg/proj/stooges                                       ($stooges)
-  25  22: $stooges/include                                             ($include)
-  26  23: $stooges/src                                                 ($src)
-  27  24: $stooges/doc                                                 ($doc)
-  28  25: --- ssh hosts ---
-  29  26: larry.domain.com                                             ($larry)
-  30  27: moe.otherdomain.com                                          ($moe)
-  31  28: curly.thirddomain.com                                        ($curly)
-  32  29:
+stooges:
+ 0:                                                                - 0 -
+ 1: cd $include                                                  ($cin)
+ 2: cd $src                                                      ($csrc)
+ 3: cd $doc                                                      ($cdoc)
+ 4:                                                                - 4 -
+ 5: ssh $moe                                                     ($smoe)
+ 6: ssh $larry                                                   ($slarry)
+ 7: ssh $curly                                                   ($scurly)
+ 8:                                                                - 8 -
+ 9:                                                                - 9 -
+10:                                                                - 10 -
+11:                                                                - 11 -
+12:                                                                - 12 -
+13:                                                                - 13 -
+14:                                                                - 14 -
+15:                                                                - 15 -
+16:                                                                - 16 -
+17:                                                                - 17 -
+18:                                                                - 18 -
+19:                                                                - 19 -
+20: --- directories ---                                            - 20 -
+21: /home/msg/proj/stooges                                       ($stooges)
+22: $stooges/include                                             ($include)
+23: $stooges/src                                                 ($src)
+24: $stooges/doc                                                 ($doc)
+25: --- ssh hosts ---                                              - 25 -
+26: larry.domain.com                                             ($larry)
+27: moe.otherdomain.com                                            - 27 -
+28: curly.thirddomain.com                                        ($curly)
+29:                                                                - 29 -
+
+Advanced usage:
 
 More complex argument handling can be done but it will be more shell
 specific as bash and zsh use shell functions and csh uses aliases

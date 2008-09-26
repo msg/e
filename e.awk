@@ -289,7 +289,7 @@ function store(arg,  entry, value)
   delete_environment(entry, enames[entry], evalues[entry]);
   evalues[entry] = value;
   if (value) {
-    add_environment(entry, evalues[entry], enames[entry]);
+    add_environment(entry, enames[entry], evalues[entry]);
   }
   write_project(eprojfile, evalues, enames);
   printf("\n");
@@ -478,7 +478,7 @@ function init(arg,  i, projs)
   aliaseval("eu", "rotate up");
   aliaseval("ew", "rotate down");
   aliaseval("ec", "clear");
-  alias("es", "es0");
+  alias("es", "es0 $*");
   alias("en", "en0");
 
   projects_list(projs)

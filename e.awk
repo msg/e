@@ -141,12 +141,14 @@ function add_environment(entry, name, value, aliasecho)
   aliaseval("en" entry, "name " entry);
 
   setenv("e" entry, value);
+  setenv("e" eproj "_e" entry, value);
   alias("e" entry, sprintf(ealiasechofmt, value, value));
   if (entry == 0) {
     alias("e", sprintf(ealiasechofmt, value, value));
   }
   if (name != "") {
     setenv(name, value);
+    setenv("e" eproj "_" name, value);
     alias("e" name, sprintf(ealiasechofmt, value, value));
   }
 }
@@ -157,12 +159,12 @@ function delete_environment(entry, name, value)
   unalias("en" entry);
 
   unalias("e" entry);
+  unsetenv("e" entry);
+  unsetenv("e" eproj "_e" entry);
   if (name) {
     unalias("e" name);
     unsetenv("e" name);
-  }
-  if (entry == 0) {
-    unalias("e");
+    unsetenv("e" eproj "_e" entry);
   }
 }
 

@@ -1,0 +1,292 @@
+
+e - e-nvironment processor
+
+Description:
+
+e is an awk script that manages a shell's environment.  It handles
+environment variables on a per-project basis.  I created because
+I work on many projects in the course of a day and got tired of updating
+.<shell>rc files to handle settings.  Plus, I work on several hosts
+each with differing projects.  e also allows evaluating environment
+variables to all quick execution of environment stored in e project
+file.  It works with bash, zsh, and csh (though more complex e usage
+requires specific setting of environments).  It is great for
+dynamic interactive shell sessions with many repetitive commands that
+require a lot of typing.  Plus, if you use environment variables with
+the same names for ease of remembering, e manages switching projects
+and whole environment variables quickly.
+
+Installation:
+
+1. mkdir $HOME/.e
+2. Download e.awk into $HOME/.e
+3. in .<shell>rc:
+   - in bash or zsh add a line:
+   eval "$(~/.e/e.awk init $(basename $SHELL))"
+
+   - in csh add a line:
+   eval "`$HOME/.e/e.awk init csh`"
+
+Usage:
+
+e has commands that are set up as shell functions (bash, zsh) or aliases
+(csh) that can be typed at the prompt.  Most commands are less the 3
+characters for brevity and speed at the command line.  The most
+important one is 'eh'.  'eh' will show the e commands available.
+
+  Projects:
+
+  An e project contains numbered slots starting from 0 going to the number
+  of entries contained in a project.  Project default to having 50 slots for
+  entries (0-49).  But this can be adjusted on a per-project basis.
+
+  Projects are managed with the 'ep [<name> [<slots>]]' command.  If
+  <name> is missing, this will list the available projects, and show the
+  current project of the current host with a '>' in front and a
+  different color.  When <name> is specified, one of two things will
+  happen.  If <name> is the name of an existing project, it's
+  environment is loaded into the shell.  If <name> is not an existing
+  project, then a new empty project is created.  <slots> is the number
+  of entries in the project.  It's default is 50.  <slots> can be
+  specified in an existing project to increase or decrease the number
+  of slots available.  It will not allow the number of slots to be
+  less the the highest numbered entry.  So it is safe to specify a
+  <slot> number that is less then the highest numbered entry.
+
+  Projects can be deleted with the 'erp <name>' command.  It doesn't
+  really delete the project.  It just removes it from the list of
+  available projects.  Basically there is a project file with the
+  list of all the slots for that project and it gets renamed so the
+  project list function doesn't see it (them).
+
+  Project files are stored in files with the format:
+  $HOME/.e/<name>.project.  When projects are deleted the project
+  name becomes <name>.oldproject.  They can be removed with 'rm' if
+  desired.
+
+  Deleted project files will be restored with 'ep <name>' if
+  $HOME/.e/<name>.oldproject exists.  It gets renamed with a .project
+  extension when the 'ep' command is executed.
+
+  Environment variables and slots:
+
+  Each slot in a project contains a value and possibly a name.  Slots
+  are managed via the 'es', 'es#', 'en' or 'en#'.  The 'es' and 'en'
+  commands work on slot 0.  They useful when a command is evaluated
+  very frequently.   There are several other commands for managing
+  several slots discussed below. 
+
+  The 'es# <value>' store <value> into slot #.  'es#' creates several shell
+  environment settings.  First it creates an $e# env variable set to
+  <value>.  Then, it creates a command 'e#' that evaluates <value>.  The
+  command is useful for evaluating the <value> in the main shell so
+  commands like 'cd' will work easily.  I use it for ssh as well.  If
+  <value> is not specified the slot value are cleared.  Remember,
+  'es <value>' is an "alias" to 'es0 <value>' for convenience.
+
+  The 'en# <name> store <name> to slot #.  The command creates an env
+  variable <name> set to the slot's <value> if the <name> doesn't
+  conflict with normal e commands ('eh' for a listing).  Then command
+  also creates an e<name> command for evaluating.  If <name> is not
+  specified, it is cleared from the slot.  Like 'es <name>', 'en <name>'
+  is an "alias" to 'en0 <name>' for convenience.  Keep in mind, <name>s
+  must be unique.  If another slot contains <name>, it will be removed
+  and moved to the new slot.
+
+  Other slot management commands:
+
+  The command 'el [<project>]' will list the <project> slots.  If
+  <project> is not specified, 'el' will list the current project.
+  The listing shows the slot number, the value, and the name for each
+  slot.  The name is shown right justified as '($<name>)'.
+
+  'em' command shows the slots that have names.  One slot per line
+  is displayed with the format $<name>,<value>.  This is useful
+  to pipe to a command or see just the current name to value mapping.
+
+  'ex <from> <to>' exchanges slot <from> value and name with <to> value
+  and name.  It is primarily used for convenience.
+
+  'eu [<num>]' rotates the slots up <num> positions (default 1) wrapping
+  the slots from slot 0 to the maximum slot entries.
+
+  'ed [<num>]' rotates the slots down <num> positions (default 1)
+  wrapping from slot 0 to the maximum slot entries.
+
+  Miscellaneous commands:
+
+  'wq' removes all e commands, env variables from the current shell.
+
+  'wh' again shows the normal e commands available.
+
+NOTE: the project files store slots one per line with the value separated
+      by a ','.  When setting the value or name of a slot, they should
+      not contain a ','.  This will corrupt e handling of slots and the
+      project file may have to be edited by hand or removed altogether.
+
+Let's see an example:
+
+Suppose we are working on 3 machines:  'larry', 'moe', and 'curly'.   We are
+working on a project 'stooges'.  'stooges' has a directory $HOME/proj/stooges.
+Under the 'stooges' directory are directories: 'include', 'src', and 'doc'.
+This is how I would setup my e project (under bash):
+
+line (# <text> is shell prompt and text to execute) 
+   1  # ep stooges 30
+   2  # es20 --- directories ---
+   3  # es21 $HOME/proj/stooges
+   4  # en21 stooges
+   5  # es22 '$stooges/include'
+   6  # en22 include
+   7  # es23 '$stooges/src'
+   8  # en23 src
+   9  # es24 '$stooges/doc'
+  10  # en24 doc
+  11  # es25 --- ssh hosts ---
+  12  # es26 larry.domain.com
+  13  # en26 larry
+  14  # es27 moe.otherdomain.com
+  15  # en27 moe
+  16  # es28 curly.thirddomain.com
+  17  # en28 curly
+
+Line by line explanation:
+  1 Create a e project called 'stooges' with 20 entries.  If the 20 was
+    left off, it would default to 50.  Some projects need more, some need
+    less.
+  2 Create an e env var at slot 20 containing '--- directories ---'.
+    This is just used as a comment for slots 21-24.  This is helpful
+    so when listing the e project, sections can have separators.  There
+    will be an env var $e20 set to '--- directories ---'.
+  3 Create an e env var at slot 21 containing '$HOME/proj/stooges'.
+    The reason for the single quotes (') is so that the shell evaluates
+    $HOME each time.  This slot it's probably not as important but
+    the next ones are.  There will be an env var $e21 set to
+    '$HOME/proj/stooges'.  It also creates a shell command e21, though
+    it will cause a shell error.  It's probably not useful for this
+    entry, but other values can be set to probably shell syntax and
+    allow them to be executed.
+  4 Name slot 21 to 'stooges'.  This command also creates $stooges
+    with the slot value set in line 3.
+  5 Create an e env var at slot 22 containing '$stooges/include'.  Now
+    the quotes are more important so env var can be evaluated in the
+    shell properly.  Plus, if slot 21 (named stooges) changes, this slot
+    will not have to be changed.
+  6 Name slot 22 to 'include'.  The shell now has an env var $include.
+    This can be used in interactive commands as well as shell functions.
+  7-10 This sets up slots 23 and 24 with names 'src' and 'doc' similar
+    to steps 5 and 6.
+  11 Create another comment slot for ssh hosts the same as step 2.
+  12-17 Setup other slots for the ssh hosts.
+
+All the entries created above will be used for environment variables.
+Now, let's create slots that will be used for execution of commands.
+I like to keep slots 0-9 for quick command evaluation because they are
+2 character commands and can be typed quickly.  I often change slot 0
+for the most often executed command for the current session.  This
+command can be evaluated with a single keystroke 'e'.  
+
+line (# <text> is shell prompt and text to execute) 
+   1  # es5 'ssh $moe'
+   2  # en5 smoe
+   3  # es6 'ssh $larry'
+   4  # en6 slarry
+   5  # es7 'ssh $curly'
+   6  # en7 scurly
+   7  # es1 'cd $include'
+   8  # en1 cin
+   9  # es2 'cd $src'
+  10  # en2 csrc
+  11  # es3 'cd $doc'
+  12  # en3 cdoc
+
+Line by line explanation:
+  1-6 Setup ssh commands with names matching the host names with a
+      leading 's' prepended.  The names aren't really required, they are
+      used as an example.  You can use them by typing 'eval $smoe' or
+      'esmoe' at the shell prompt.  But it's much faster to just type
+      'e5'.  What's nice is you can use any of the commands to your 
+      reference.
+  7-12 Setup cd commands with names matching the stored directory names
+      with a leading 'c' prepended.  Just like the ssh commands described
+      above, there are several ways to 'cd' to the directories: '$cin',
+      'ecin', or 'e1'.  Take your pick.
+
+These created commands can also take parameters from the command line
+which makes it vary configurable.  For example:
+
+  # $smoe ls proj
+
+will ssh to moe and run 'ls proj'.  It just appends the arguments onto
+the command before execution.
+
+Lets look at other e commands:
+
+If 'el' is executed the output is colorized and looks like:
+
+line (# <text> is shell prompt and text to execute) 
+   1  # el
+   2  stooges:
+   3  0:
+   4  1: cd $include                                                  ($cin)
+   5  2: cd $src                                                      ($csrc)
+   6  3: cd $doc                                                      ($cdoc)
+   7  4:
+   8  5: ssh $moe                                                     ($smoe)
+   9  6: ssh $larry                                                   ($slarry)
+  10  7: ssh $curly                                                   ($scurly)
+  11  8:
+  12  9:
+  13  10:
+  14  11:
+  15  12:
+  16  13:
+  17  14:
+  18  15:
+  19  16:
+  20  17:
+  21  18:
+  22  19:
+  23  20: --- directories ---
+  24  21: /home/msg/proj/stooges                                       ($stooges)
+  25  22: $stooges/include                                             ($include)
+  26  23: $stooges/src                                                 ($src)
+  27  24: $stooges/doc                                                 ($doc)
+  28  25: --- ssh hosts ---
+  29  26: larry.domain.com                                             ($larry)
+  30  27: moe.otherdomain.com                                          ($moe)
+  31  28: curly.thirddomain.com                                        ($curly)
+  32  29:
+
+More complex argument handling can be done but it will be more shell
+specific as bash and zsh use shell functions and csh uses aliases
+for handling of e commands.  NOTE: if zsh is being used, the zsh option
+'globsubst' should be disabled before attempting these examples.  There
+may better ways to handle these situations but I haven't solved them
+yet.
+
+As an example, lets create a command 'echo 1 <args> 3' to see how
+to pass arguments in different order:
+
+For bash and zsh:
+
+  # es0 'echo 1 $* 3'
+ 
+It's relatively simple because the who expression is single quoted.
+When e command is evaluated with 'e0 <args>' the '$*' will be replaced
+with <args>.
+
+Now, for csh:
+
+  # es0 'echo 1 \\\!* 3'
+
+The way arguments are substituted makes these operations tricky.  The
+shells will interpret them different ways.  The csh '\\\!*' was the only
+way I could get it to work correctly because all the e commands are
+aliases using the 'eval' builtin.  These types of situations are rare
+but come up occasionally.  Just make sure the '\\\!*' has exactly 3
+'\'s.
+
+Sometimes I like to create an indirection where one slot value is used
+as a reference to another.  
+

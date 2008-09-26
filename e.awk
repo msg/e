@@ -74,11 +74,13 @@ function set_formats(shell)
     eunsetenvfmt = "unset %s\n";
     ealiasfmt = "%s() {\n  %s \n}\n";
     eunaliasfmt = eunsetenvfmt;
+    ealiasechofmt = "echo \"%s $*\"; eval \"%s $*\"";
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
     ealiasfmt = "alias %s \"%s\";";
     eunaliasfmt = "unalias %s;";
+    ealiasechofmt = "echo \"%s \\!\\*\"; eval \"%s \\!\\*\"";
   }
 }
 
@@ -129,18 +131,17 @@ function unalias(name)
 
 function add_environment(entry, name, value, aliasecho)
 {
-  aliasecho = sprintf("echo \"%s\"; eval \"%s\"", value, value);
   aliaseval("es" entry, "store " entry);
   aliaseval("en" entry, "name " entry);
 
   setenv("e" entry, value);
-  alias("e" entry, aliasecho);
+  alias("e" entry, sprintf(ealiasechofmt, value, value));
   if (entry == 0) {
-    alias("e", aliasecho);
+    alias("e", sprintf(ealiasechofmt, value, value));
   }
   if (name != "") {
     setenv(name, value);
-    alias("e" name, aliasecho);
+    alias("e" name, sprintf(ealiasechofmt, value, value));
   }
 }
 

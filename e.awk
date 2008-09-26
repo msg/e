@@ -57,6 +57,12 @@ function projects_list(projs,  projnm, i)
   }
 }
 
+function hostname(  host)
+{
+  "hostname -s"|getline host; 
+  return host
+}
+
 function isbourne(shell)
 {
   return shell == "zsh" || shell == "bash" || shell == "sh";
@@ -526,9 +532,9 @@ BEGIN {
   }
   eshell = ENVIRON["ESHELL"];
   set_formats(eshell);
-  "hostname -s"|getline ehost; 
+  ehost = hostname();
   emax=EMAXDEFAULT;
-  eproj = get_current_project(ehost, ehost);
+  eproj = get_current_project(ehost, ehome);
   eprojfile = ehome "/" eproj ".project";
   if ((getline < eprojfile) < 0) {
     create_project(eproj, EMAXDEFAULT);

@@ -185,9 +185,9 @@ function delete_project_environment(proj,  projfile, names, values, mx, i)
   projfile = ehome "/" proj ".project";
   mx = read_project(projfile, values, names);
   for (i=0; i<mx; i++) {
-    unsetenv("e" proj "_e" i, values[i]);
+    unsetenv("e" proj "_e" i);
     if (names[i]) {
-      unsetenv("e" proj "_" names[i], values[i]);
+      unsetenv("e" proj "_" names[i]);
     }
   }
 }
@@ -274,7 +274,9 @@ function rmproj(arg,  name)
     echo(sprintf("cannot remove current project '%s'", name));
   } else {
     delete_project_environment(name);
-    if (system(sprintf("/bin/mv %s/%s.oldproject",ehome,name))) {
+    cmd = sprintf("/bin/mv %s/%s.project %s/%s.oldproject",
+	  ehome, name, ehome, name);
+    if (system(cmd)) {
       echo(sprintf("cannot remove project '%s'", name));
     }
     list_projects();

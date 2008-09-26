@@ -292,9 +292,7 @@ function store(arg,  entry, value)
   }
   delete_environment(entry, enames[entry], evalues[entry]);
   evalues[entry] = value;
-  if (value) {
-    add_environment(entry, enames[entry], evalues[entry]);
-  }
+  add_environment(entry, enames[entry], evalues[entry]);
   write_project(eprojfile, evalues, enames);
   printf("\n");
 }
@@ -338,6 +336,7 @@ function name(arg,  entry, newname, i)
   if (reserved) {
     echo(sprintf("invalid name '%s' for entry %d is reserved",
 	  reserved, entry));
+    echo("available single letters for e command: abc efgh jk no r t v yz");
     return
   }
   remove_name(newname);
@@ -465,7 +464,6 @@ function help(arg)
       "remove env and alises");
   printf(CY "eh" NO ":                  %s\n",
       "print this help message");
-  printf("  available single letters for e command: abc efgh jk no r t v yz");
 }
 
 function init(arg,  i, projs)

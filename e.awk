@@ -126,7 +126,7 @@ function aliaseawk(name, value)
   if (isbourne(eshell)) {
     alias(name, sprintf("%s/e.awk %s $*", ehome, value));
   } else if (iscsh(eshell)) {
-    alias(name, sprintf("%s/e.awk %s \\!\\*", ehome, value));
+    alias(name, sprintf("%s/e.awk %s \\!*", ehome, value));
   }
 }
 

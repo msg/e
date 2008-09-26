@@ -534,7 +534,7 @@ BEGIN {
   set_formats(eshell);
   ehost = hostname();
   emax=EMAXDEFAULT;
-  eproj = get_current_project(ehost, ehome);
+  eproj = get_current_project(ehome, ehost);
   eprojfile = ehome "/" eproj ".project";
   if ((getline < eprojfile) < 0) {
     create_project(eproj, EMAXDEFAULT);

@@ -465,7 +465,7 @@ function help(arg)
       "remove env and alises");
   printf(CY "eh" NO ":                  %s\n",
       "print this help message");
-  printf("  available single letters for e command: abcefghjknortvyz");
+  printf("  available single letters for e command: abc efgh jk no r t v yz");
 }
 
 function init(arg,  i, projs)

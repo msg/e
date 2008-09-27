@@ -84,9 +84,9 @@ function set_formats(shell)
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
-    ealiasfmt = "alias %s \"%s\";";
+    ealiasfmt = "alias %s '%s';";
     eunaliasfmt = "unalias %s;";
-    ealiasechofmt = "echo \"%s \\!\\*\"; eval \"%s \\!\\*\"";
+    ealiasechofmt = "echo \"%s \\!*\"; eval \"%s \\!*\"";
   }
 }
 
@@ -111,7 +111,7 @@ function aliaseval(name, value)
     printf("%s() {\n  eval \"$(%s/e.awk %s $*)\"\n}\n",
 	   name, ehome, value);
   } else if (iscsh(eshell)) {
-    printf("set x=(eval \\\"\\`%s/e.awk %s \\!\\*\\`\\\");alias %s \"$x\";",
+    printf("set e=(eval \\\"\\`%s/e.awk %s \\\\!\\*\\`\\\");alias %s \"$e\";",
 	   ehome, value, name);
   }
 }
@@ -530,7 +530,7 @@ function init(arg,  i, projs)
   }
 
   if (iscsh(shell)) {
-    unsetenv("x");
+    unsetenv("e");
   }
 }
 

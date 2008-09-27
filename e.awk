@@ -416,7 +416,7 @@ function mapping(arg,  i)
   #} else {
   #  fmt = CY "$%s" NO ":%s\n";
   #}
-  fmt = "$%s,%s\n";
+  fmt = "$%s,'%s'\n";
   for(i=0;i<emax;i++) {
     if (enames[i]) {
       printf(fmt, enames[i], evalues[i]);

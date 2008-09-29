@@ -30,11 +30,11 @@ function read_project(projfile, values, names,  i)
 {
   FS = ",";
   i = 0;
-  while (getline < projfile > 0) {
+  while ((getline < projfile) > 0) {
     values[i] = $1;
     names[i++] = $2;
   }
-  close(eprojfile);
+  close(projfile);
   return i
 }
 
@@ -43,7 +43,7 @@ function write_project(projfile, values, names,  i)
   for(i=0;i<emax;i++) {
     printf("%s,%s\n", values[i], names[i]) > projfile;
   }
-  close(eprojfile);
+  close(projfile);
 }
 
 function projects_list(projs,  projnm, i)
@@ -420,18 +420,31 @@ function list(arg,  i, proj)
   }
 }
 
-function mapping(arg,  i)
+function mapping(arg,  projs, proj, i, j, n, names, values)
 {
+  fmt = "$%s,'%s',%s\n";
   #rc = system("tty >/dev/null")
   #if (rc) {
   #  fmt = "$%s:%s\n";
   #} else {
   #  fmt = CY "$%s" NO ":%s\n";
   #}
-  fmt = "$%s,'%s'\n";
+  projects_list(projs);
+  for (j in projs) {
+    if (projs[j] == eproj) {
+      continue;
+    }
+    proj = ehome "/" projs[j] ".project";
+    n = read_project(proj, values, names);
+    for (i=0; i<n; i++) {
+      if (names[i]) {
+        printf(fmt, names[i], values[i], proj);
+      }
+    }
+  }
   for(i=0;i<emax;i++) {
     if (enames[i]) {
-      printf(fmt, enames[i], evalues[i]);
+      printf(fmt, enames[i], evalues[i], eproj);
     }
   }
 }

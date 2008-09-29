@@ -226,7 +226,11 @@ function create_project(proj, mx,  i)
   delete enames;
   set_current_project(ehome, ehost, proj);
   eproj = proj
-  eprojfile = ehome "/" eproj ".project";
+  proj = ehome "/" eproj
+  eprojfile = proj ".project";
+  if ((getline < sprintf("%s.oldproject", proj)) > 0) {
+    system("mv " proj ".oldproject " eprojfile);
+  }
   emax = read_project(eprojfile, evalues, enames);
   if (emax == 0) {
     emax = mx;

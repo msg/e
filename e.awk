@@ -80,13 +80,13 @@ function set_formats(shell)
     eunsetenvfmt = "unset %s\n";
     ealiasfmt = "%s() {\n  %s \n}\n";
     eunaliasfmt = "unset -f %s\n";;
-    ealiasechofmt = "echo \"%s $*\"; eval \"%s $*\"";
+    ealiasechofmt = "echo \"%s\"; eval \"%s\"";
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
     ealiasfmt = "alias %s '%s';";
     eunaliasfmt = "unalias %s;";
-    ealiasechofmt = "echo \"%s \\!*\"; eval \"%s \\!*\"";
+    ealiasechofmt = "echo \"%s\"; eval \"%s\"";
   }
 }
 

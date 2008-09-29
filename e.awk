@@ -439,7 +439,7 @@ function mapping(arg,  projs, proj, i, j, n, names, values)
       n = read_project(proj, values, names);
       for (i=0; i<n; i++) {
 	if (names[i]) {
-	  printf(fmt, names[i], values[i], proj);
+	  printf(fmt, names[i], values[i], projs[j]);
 	}
       }
     }
@@ -639,3 +639,4 @@ BEGIN {
 }
 
 # vim: sw=2:
+

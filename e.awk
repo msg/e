@@ -137,10 +137,6 @@ function unalias(name)
 
 function add_environment(entry, name, value, aliasecho)
 {
-  aliaseval("es" entry, "store " entry);
-  aliaseval("en" entry, "name " entry);
-  aliaseval("ev" entry, "value " entry);
-
   setenv("e" entry, value);
   setenv("e" eproj "_e" entry, value);
   alias("e" entry, sprintf(ealiasechofmt, value, value));
@@ -156,10 +152,6 @@ function add_environment(entry, name, value, aliasecho)
 
 function delete_environment(entry, name)
 {
-  unalias("es" entry);
-  unalias("en" entry);
-  unalias("ev" entry);
-
   unalias("e" entry);
   unsetenv("e" entry);
   unsetenv("e" eproj "_e" entry);
@@ -484,11 +476,11 @@ function help(arg)
       "display proj(s) or set/create/resize proj with nslots");
   printf(CY "erp" NO " " GR "<proj>" NO ":          %s\n",
       "remove proj (cannot be current)");
-  printf(CY "es" NO "," CY "es" NO "["GR"0-#"NO"] "GR"value"NO":    %s\n",
+  printf(CY "es" NO "["GR"0-#"NO"] "GR"value"NO":       %s\n",
       "store value to slot 0-# (es=es0) (empty clears)");
-  printf(CY "en" NO "," CY "en" NO "["GR"0-#"NO"] "GR"name"NO":     %s\n",
+  printf(CY "en" NO "["GR"0-#"NO"] "GR"name"NO":        %s\n",
       "make environment variable name point to slot");
-  printf(CY "ev" NO "," CY "ev" NO "["GR"0-#"NO"] "GR"name val"NO": %s\n",
+  printf(CY "ev" NO "["GR"0-#"NO"] "GR"name val"NO":    %s\n",
       "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
       "evaluate/execute slot value with args (e=e0)");
@@ -532,9 +524,6 @@ function init(arg,  i, projs)
   aliaseval("eu", "rotate up");
   aliaseval("ew", "rotate down");
   aliaseval("ec", "clear");
-  alias("es", "es0 $*");
-  alias("en", "en0 $*");
-  alias("ev", "ev0 $*");
 
   for(i=0; i<emax; i++) {
     add_environment(i, enames[i], evalues[i]);
@@ -576,7 +565,7 @@ BEGIN {
   CY="\x1b[36;01m"
 
   EMAXDEFAULT=30
-  split("eh el em ei eq ep erp ex eu ew es en e", ecommands) 
+  split("eh el em ei eq ep erp ex eu ew e", ecommands) 
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";

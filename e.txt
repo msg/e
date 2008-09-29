@@ -96,10 +96,16 @@ important one is 'eh'.  'eh' will show the e commands available.
   'ev# <name> <value>' is a convience command allowing the setting of
   slot name and slot value simultaneously.
 
-  The env also contain a per project variables.  They can be referenced
+  The env also contains per project variables.  They can be referenced
   $e<project-name>_<var>, where var is an actual name of a slot or e# 
-  referencing the index.  The evaluation commands are only setup for the
-  current project.
+  referencing the index.  The evaluation (e#) commands are only setup
+  for the current project. 
+
+  The environment variables also contain $<name> for each project.  If
+  there are multiple projects with $<name> set, they will be loaded
+  alphabetically and overrided by later loaded projects variables.  The
+  current project is the last one loaded, so it takes precedence over
+  all other projects.
 
   Evaluation of e slots:
 

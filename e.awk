@@ -224,6 +224,7 @@ function create_project(proj, mx,  i)
   }
   delete evalues;
   delete enames;
+  add_project_enironment(eproj);
   set_current_project(ehome, ehost, proj);
   eproj = proj
   proj = ehome "/" eproj

@@ -154,7 +154,7 @@ function add_environment(entry, name, value, aliasecho)
   }
 }
 
-function delete_environment(entry, name, value)
+function delete_environment(entry, name)
 {
   unalias("es" entry);
   unalias("en" entry);
@@ -178,6 +178,8 @@ function add_project_environment(proj,  projfile, names, values, mx, i)
     setenv("e" proj "_e" i, values[i]);
     if (names[i]) {
       setenv("e" proj "_" names[i], values[i]);
+      setenv(names[i], values[i]);
+      alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
     }
   }
 }
@@ -190,6 +192,8 @@ function delete_project_environment(proj,  projfile, names, values, mx, i)
     unsetenv("e" proj "_e" i);
     if (names[i]) {
       unsetenv("e" proj "_" names[i]);
+      unsetenv(names[i]);
+      unalias(names[i]);
     }
   }
 }
@@ -216,7 +220,7 @@ function create_project(proj, mx,  i)
   }
   # take all enames and unset them
   for(i=0; i<emax; i++) {
-    delete_environment(i, enames[i], evalues[i]);
+    delete_environment(i, enames[i]);
   }
   delete evalues;
   delete enames;
@@ -240,7 +244,7 @@ function resize_project(mx)
       if (evalues[emax-1]) {
         break;
       }
-      delete_environment(emax-1, enames[emax-1], evalues[emax-1])
+      delete_environment(emax-1, enames[emax-1])
       delete evalues[emax-1];
       delete enames[emax-1];
     }
@@ -269,17 +273,20 @@ function project(arg,   proj, projnm)
   list_projects();
 }
 
-function rmproj(arg,  name)
+function rmproj(arg,  proj)
 {
-  name = ARGV[arg++];
-  if (name == eproj) {
-    echo(sprintf("cannot remove current project '%s'", name));
+  proj = ARGV[arg++];
+  if (proj == eproj) {
+    echo(sprintf("cannot remove current project '%s'", proj));
   } else {
-    delete_project_environment(name);
+    delete_project_environment(proj);
     cmd = sprintf("/bin/mv %s/%s.project %s/%s.oldproject",
-	  ehome, name, ehome, name);
+	  ehome, proj, ehome, proj);
     if (system(cmd)) {
-      echo(sprintf("cannot remove project '%s'", name));
+      echo(sprintf("cannot rename project '%s'", proj));
+    }
+    for (i=0; i<emax; i++) {
+      add_environment(i, enames[i], evalues[i]);
     }
     list_projects();
   }
@@ -291,7 +298,7 @@ function add_value(entry, value)
     echo(sprintf("invalid value '%s' cannot be same as name", value));
     return;
   }
-  delete_environment(entry, enames[entry], evalues[entry]);
+  delete_environment(entry, enames[entry]);
   evalues[entry] = value;
   add_environment(entry, enames[entry], evalues[entry]);
   write_project(eprojfile, evalues, enames);
@@ -331,29 +338,29 @@ function remove_name(name,  i)
 {
   for (i=0; i<emax; i++) {
     if (enames[i] == name) {
-      delete_environment(i, enames[entry], evalues[entry]);
+      delete_environment(i, enames[entry]);
       enames[i] = "";
       add_environment(i, enames[i], evalues[i]);
     }
   }
 }
 
-function add_name(entry, name,  reserved)
+function add_name(entry, newname,  reserved)
 {
   # validate name
-  if (name && evalues[entry] == name) {
-    echo(sprintf("invalid name '%s' cannot be same as value", name));
+  if (newname && evalues[entry] == newname) {
+    echo(sprintf("invalid name '%s' cannot be same as value", newname));
     return;
   }
-  reserved = isreserved(name);
+  reserved = isreserved(newname);
   if (reserved) {
     echo(sprintf("invalid name '%s' for entry %d is reserved",
 	  reserved, entry));
     return
   }
-  remove_name(name);
-  delete_environment(entry, enames[entry], evalues[entry]);
-  enames[entry] = name;
+  remove_name(newname);
+  delete_environment(entry, enames[entry]);
+  enames[entry] = newname;
   add_environment(entry, enames[entry], evalues[entry]);
   write_project(eprojfile, evalues, enames);
   printf("\n");
@@ -366,16 +373,16 @@ function name(arg,  entry, newname, i)
   add_name(entry, newname);
 }
 
-function value(arg,  entry, name, val)
+function value(arg,  entry, newname, val)
 {
   entry = ARGV[arg++];
-  name = ARGV[arg++];
+  newname = ARGV[arg++];
   val = ARGV[arg++];
   for (; arg<ARGC; arg++) {
     val = val " " ARGV[arg];
   }
   add_value(entry, val);
-  add_name(entry, name);
+  add_name(entry, newname);
 }
 
 function eval(arg,  entry, e, i)
@@ -385,7 +392,7 @@ function eval(arg,  entry, e, i)
   for (; arg < ARGC; arg++) {
     e = e " " ARGV[arg];
   }
-  printf("%s\n", e)
+  printf("%s\n", e);
 }
 
 function list(arg,  i, proj)
@@ -430,8 +437,8 @@ function exchange(arg,  from, to, tmpvalue, tmpname)
   to = ARGV[arg++];
 
   printf("echo exchange %d %d;", from, to);
-  delete_environment(from, enames[to], evalues[from]);
-  delete_environment(to, enames[to], evalues[from]);
+  delete_environment(from, enames[to]);
+  delete_environment(to, enames[to]);
   tmpvalue = evalues[from];
   tmpname = enames[from];
   evalues[from] = evalues[to];
@@ -459,7 +466,7 @@ function rotate(arg,  direction, positions, start, new, newvalues, newnames)
     newnames[i] = enames[new];
   }
   for(i=0; i<emax; i++) {
-    delete_environment(i, enames[i], evalues[i]);
+    delete_environment(i, enames[i]);
     evalues[i] = newvalues[i];
     enames[i] = newnames[i];
     add_environment(i, enames[i], evalues[i]);
@@ -505,6 +512,11 @@ function init(arg,  i, projs)
   set_formats(eshell);
   setenv("ESHELL", eshell);
 
+  projects_list(projs)
+  for(i in projs) {
+    add_project_environment(projs[i]);
+  }
+
   aliaseawk("eh", "help");
   aliaseawk("el", "list");
   aliaseawk("em", "mapping");
@@ -519,11 +531,6 @@ function init(arg,  i, projs)
   alias("es", "es0 $*");
   alias("en", "en0 $*");
   alias("ev", "ev0 $*");
-
-  projects_list(projs)
-  for(i in projs) {
-    add_project_environment(projs[i]);
-  }
 
   for(i=0; i<emax; i++) {
     add_environment(i, enames[i], evalues[i]);
@@ -542,7 +549,7 @@ function quit(arg,  shell, i, projs)
     unalias(ecommands[i])
   }
   for (i=0; i<emax; i++) {
-    delete_environment(i, enames[i], evalues[i]);
+    delete_environment(i, enames[i]);
   }
 
   projects_list(projs)

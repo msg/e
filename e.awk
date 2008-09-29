@@ -170,11 +170,11 @@ function delete_environment(entry, name)
   }
 }
 
-function add_project_environment(proj,  projfile, names, values, mx, i)
+function add_project_environment(proj,  projfile, names, values, n, i)
 {
   projfile = ehome "/" proj ".project";
-  mx = read_project(projfile, values, names);
-  for (i=0; i<mx; i++) {
+  n = read_project(projfile, values, names);
+  for (i=0; i<n; i++) {
     setenv("e" proj "_e" i, values[i]);
     if (names[i]) {
       setenv("e" proj "_" names[i], values[i]);
@@ -184,11 +184,11 @@ function add_project_environment(proj,  projfile, names, values, mx, i)
   }
 }
 
-function delete_project_environment(proj,  projfile, names, values, mx, i)
+function delete_project_environment(proj,  projfile, names, values, n, i)
 {
   projfile = ehome "/" proj ".project";
-  mx = read_project(projfile, values, names);
-  for (i=0; i<mx; i++) {
+  n = read_project(projfile, values, names);
+  for (i=0; i<n; i++) {
     unsetenv("e" proj "_e" i);
     if (names[i]) {
       unsetenv("e" proj "_" names[i]);
@@ -198,25 +198,25 @@ function delete_project_environment(proj,  projfile, names, values, mx, i)
   }
 }
 
-function list_projects(  projnm, leader, projs, i)
+function list_projects(  proj, leader, projs, i, n, names, values)
 {
   projects_list(projs); 
   for (i in projs) {
-    projnm=projs[i]
-    if (eproj == projnm) {
+    proj = ehome "/" projs[i] ".project";
+    n = read_project(proj, values, names);
+    if (eproj == projs[i]) {
       leader = ">" YL;
     } else {
       leader = " " CY;
     }
-    echo(leader projnm NO);
+    echo(leader projs[i] NO " " n);
   }
 }
 
-function create_project(proj, mx,  i)
+function create_project(proj, n,  i)
 {
-  mx = mx;
-  if (mx == 0) {
-    mx = EMAXDEFAULT;
+  if (n == 0) {
+    n = EMAXDEFAULT;
   }
   # take all enames and unset them
   for(i=0; i<emax; i++) {
@@ -234,7 +234,7 @@ function create_project(proj, mx,  i)
   }
   emax = read_project(eprojfile, evalues, enames);
   if (emax == 0) {
-    emax = mx;
+    emax = n;
     write_project(eprojfile, evalue, enames);
   }
   for(i=0; i<emax; i++) {
@@ -242,10 +242,10 @@ function create_project(proj, mx,  i)
   }
 }
 
-function resize_project(mx)
+function resize_project(n)
 {
-  if (mx < emax) {
-    for (;emax > mx; emax--) {
+  if (n < emax) {
+    for (;emax > n; emax--) {
       if (evalues[emax-1]) {
         break;
       }
@@ -254,7 +254,7 @@ function resize_project(mx)
       delete enames[emax-1];
     }
   } else {
-    for (;emax < mx; emax++) {
+    for (;emax < n; emax++) {
       evalues[emax] = "";
       enames[emax] = "";
       add_environment(emax, enames[emax], evalues[emax])
@@ -263,15 +263,15 @@ function resize_project(mx)
   write_project(eprojfile, evalues, enames);
 }
 
-function project(arg,   proj, projnm)
+function project(arg,   proj, projnm, n)
 {
   proj = ARGV[arg++];
   if (proj) {
-    mx = ARGV[arg++];
+    n = ARGV[arg++];
     if (proj != eproj) {
-      create_project(proj, mx)
-    } else if (mx != 0 && emax != mx) {
-      resize_project(mx);
+      create_project(proj, n)
+    } else if (n != 0 && emax != n) {
+      resize_project(n);
     }
     write_project(eprojfile, evalues, enames);
   }
@@ -429,16 +429,18 @@ function mapping(arg,  projs, proj, i, j, n, names, values)
   #} else {
   #  fmt = CY "$%s" NO ":%s\n";
   #}
-  projects_list(projs);
-  for (j in projs) {
-    if (projs[j] == eproj) {
-      continue;
-    }
-    proj = ehome "/" projs[j] ".project";
-    n = read_project(proj, values, names);
-    for (i=0; i<n; i++) {
-      if (names[i]) {
-        printf(fmt, names[i], values[i], proj);
+  if (ARGV[arg++] == "-a") {
+    projects_list(projs);
+    for (j in projs) {
+      if (projs[j] == eproj) {
+	continue;
+      }
+      proj = ehome "/" projs[j] ".project";
+      n = read_project(proj, values, names);
+      for (i=0; i<n; i++) {
+	if (names[i]) {
+	  printf(fmt, names[i], values[i], proj);
+	}
       }
     }
   }

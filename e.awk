@@ -137,6 +137,10 @@ function unalias(name)
 
 function add_environment(entry, name, value, aliasecho)
 {
+  aliaseval("es" entry, "store " entry);
+  aliaseval("en" entry, "name " entry);
+  aliaseval("ev" entry, "value " entry);
+
   setenv("e" entry, value);
   setenv("e" eproj "_e" entry, value);
   alias("e" entry, sprintf(ealiasechofmt, value, value));
@@ -152,6 +156,10 @@ function add_environment(entry, name, value, aliasecho)
 
 function delete_environment(entry, name)
 {
+  unalias("es" entry);
+  unalias("en" entry);
+  unalias("ev" entry);
+
   unalias("e" entry);
   unsetenv("e" entry);
   unsetenv("e" eproj "_e" entry);

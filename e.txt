@@ -71,8 +71,7 @@ important one is 'eh'.  'eh' will show the e commands available.
   Environment variables and slots:
 
   Each slot in a project contains a value and possibly a name.  Slots
-  are managed via the 'es', 'es#', 'en', 'en#', 'ev', and 'ev#'.  The
-  'es', 'en' and 'ev' commands work on slot 0.  They useful when a command
+  are managed via the 'es#', 'en#', and 'ev#'.  They useful when a command
   is evaluated very frequently.   There are several other commands for
   managing several slots discussed below. 
 
@@ -81,17 +80,15 @@ important one is 'eh'.  'eh' will show the e commands available.
   <value>.  Then, it creates a command 'e#' that evaluates <value>.  The
   command is useful for evaluating the <value> in the main shell so
   commands like 'cd' will work easily.  I use it for ssh as well.  If
-  <value> is not specified the slot value are cleared.  Remember,
-  'es <value>' is an "alias" to 'es0 <value>' for convenience.
+  <value> is not specified the slot value are cleared.
 
   The 'en# <name> store <name> to slot #.  The command creates an env
   variable <name> set to the slot's <value> if the <name> doesn't
   conflict with normal e commands ('eh' for a listing).  Then command
   also creates an e<name> command for evaluating.  If <name> is not
-  specified, it is cleared from the slot.  Like 'es <name>', 'en <name>'
-  is an "alias" to 'en0 <name>' for convenience.  Keep in mind, <name>s
-  must be unique.  If another slot contains <name>, it will be removed
-  and moved to the new slot.
+  specified, it is cleared from the slot.  Keep in mind, <name>s must
+  be unique.  If another slot contains <name>, it will be removed and
+  moved to the new slot.
 
   'ev# <name> <value>' is a convience command allowing the setting of
   slot name and slot value simultaneously.

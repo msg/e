@@ -442,7 +442,7 @@ function list(arg,  i, proj, s)
   for(i=0; i<emax; i++) {
     s = evalues[i];
     if (length(s) > 60) {
-      s = substr(s, 1, 56) " ...";
+      s = substr(s, 1, 56) RD " ..." NO;
     }
     printf(CY "%2d" NO ": %-60s ", i, s);
     if (enames[i]) {

@@ -427,7 +427,7 @@ function evalrange(arg,  ranges, i)
   }
 }
 
-function list(arg,  i, proj)
+function list(arg,  i, proj, s)
 {
   proj = ARGV[arg++]
   if (proj && proj != eproj) {
@@ -437,7 +437,11 @@ function list(arg,  i, proj)
   }
   printf(YL eproj NO ":\n");
   for(i=0; i<emax; i++) {
-    printf(CY "%2d" NO ": %-60s ", i, evalues[i]);
+    s = evalues[i];
+    if (length(s) > 60) {
+      s = substr(s, 1, 56) " ...";
+    }
+    printf(CY "%2d" NO ": %-60s ", i, s);
     if (enames[i]) {
       printf("(" CY "$%s" NO ")", enames[i]);
     } else {

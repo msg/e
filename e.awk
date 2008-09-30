@@ -178,13 +178,18 @@ function add_project_environment(proj,  names, values, n, i)
 {
   n = read_project(ehome "/" proj ".project", values, names);
   for (i=0; i<n; i++) {
-    if (values[i]) {
-      setenv("e" proj "_e" i, values[i]);
-      if (names[i] && names[i] != "init") {
-	setenv("e" proj "_" names[i], values[i]);
-	setenv(names[i], values[i]);
-	alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
-      }
+    if (!values[i]) {
+      continue;
+    }
+    setenv("e" proj "_e" i, values[i]);
+    if (!names[i]) {
+      continue;
+    }
+    setenv("e" proj "_" names[i], values[i]);
+    alias("e" proj "_" names[i], sprintf(ealiasechofmt, values[i], values[i]));
+    if (names[i] != "init" || names[i] != "deinit") {
+      setenv(names[i], values[i]);
+      alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
     }
   }
 }
@@ -196,6 +201,7 @@ function delete_project_environment(proj,  names, values, n, i)
     unsetenv("e" proj "_e" i);
     if (names[i]) {
       unsetenv("e" proj "_" names[i]);
+      unalias("e" proj "_" names[i]);
       unsetenv(names[i]);
       unalias(names[i]);
     }
@@ -294,18 +300,18 @@ function rmproj(arg,  proj)
   proj = ARGV[arg++];
   if (proj == eproj) {
     echo(sprintf("cannot remove current project '%s'", proj));
-  } else {
-    delete_project_environment(proj);
-    cmd = sprintf("/bin/mv %s/%s.project %s/%s.oldproject",
-	  ehome, proj, ehome, proj);
-    if (system(cmd)) {
-      echo(sprintf("cannot rename project '%s'", proj));
-    }
-    for (i=0; i<emax; i++) {
-      add_environment(i, enames[i], evalues[i]);
-    }
-    list_projects();
+    return;
   }
+  delete_project_environment(proj);
+  cmd = sprintf("/bin/mv %s/%s.project %s/%s.oldproject",
+	ehome, proj, ehome, proj);
+  if (system(cmd)) {
+    echo(sprintf("cannot rename project '%s'", proj));
+  }
+  for (i=0; i<emax; i++) {
+    add_environment(i, enames[i], evalues[i]);
+  }
+  list_projects();
 }
 
 function add_value(entry, value)

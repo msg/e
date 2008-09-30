@@ -52,7 +52,7 @@ function projects_list(projs,  projnm, i)
   i = 0
   while (sprintf("ls %s/*.project", ehome) |getline) {
     projnm=$NF
-    gsub(".project", "", projnm);
+    gsub("\\.project", "", projnm);
     projs[i++] = projnm;
   }
 }

@@ -513,7 +513,7 @@ function help(arg)
       "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
       "evaluate/execute slot value with args (e=e0)");
-  printf("er" NO ""GR"start-end"NO":         %s\n",
+  printf(CY "er" NO " "GR"start-end"NO":         %s\n",
       "evaluate/execute slots from start to end");
   printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");

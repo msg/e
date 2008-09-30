@@ -175,11 +175,13 @@ function add_project_environment(proj,  projfile, names, values, n, i)
   projfile = ehome "/" proj ".project";
   n = read_project(projfile, values, names);
   for (i=0; i<n; i++) {
-    setenv("e" proj "_e" i, values[i]);
-    if (names[i]) {
-      setenv("e" proj "_" names[i], values[i]);
-      setenv(names[i], values[i]);
-      alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
+    if (values[i]) {
+      setenv("e" proj "_e" i, values[i]);
+      if (names[i]) {
+	setenv("e" proj "_" names[i], values[i]);
+	setenv(names[i], values[i]);
+	alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
+      }
     }
   }
 }
@@ -364,7 +366,6 @@ function add_name(entry, newname,  reserved)
     return
   }
   remove_name(newname);
-  delete_environment(entry, enames[entry]);
   enames[entry] = newname;
   add_environment(entry, enames[entry], evalues[entry]);
   write_project(eprojfile, evalues, enames);

@@ -62,7 +62,9 @@ important one is 'eh'.  'eh' will show the e commands available.
   Project files are stored in files with the format:
   $HOME/.e/<name>.project.  When projects are deleted the project
   name becomes <name>.oldproject.  They can be removed with 'rm' if
-  desired.
+  desired.  They will be restored if 'ep <name>' matches
+  <name>.oldproject.  This a way to hide the variables exported from
+  a project.
 
   Deleted project files will be restored with 'ep <name>' if
   $HOME/.e/<name>.oldproject exists.  It gets renamed with a .project
@@ -126,6 +128,10 @@ important one is 'eh'.  'eh' will show the e commands available.
   not work correctly.  It's a limitation of shell and portability
   between all the shells supported.
 
+  Two special slot names 'init' and 'deinit' will be evaluated when a
+  project is selected (init) or when a another project is selected (deinit).
+  The 'init' will also be evaluated when e is first initialized.
+
   Other slot management commands:
 
   The command 'el [<project>]' will list the <project> slots.  If
@@ -136,6 +142,8 @@ important one is 'eh'.  'eh' will show the e commands available.
   'em' command shows the slots that have names.  One slot per line
   is displayed with the format $<name>,<value>.  This is useful
   to pipe to a command or see just the current name to value mapping.
+  If '-a' is passed as an argument, this command will show all env
+  variables from all projects that are exported.
 
   'ex <from> <to>' exchanges slot <from> value and name with <to> value
   and name.  It is primarily used for convenience.

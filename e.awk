@@ -28,6 +28,8 @@ function set_current_project(home, host, proj,  file)
 
 function read_project(projfile, values, names,  i)
 {
+  delete values;
+  delete names;
   FS = ",";
   i = 0;
   while ((getline < projfile) > 0) {
@@ -149,7 +151,7 @@ function add_environment(entry, name, value)
   if (entry == 0) {
     alias("e", sprintf(ealiasechofmt, value, value));
   }
-  if (name != "") {
+  if (name) {
     setenv(name, value);
     setenv("e" eproj "_" name, value);
     alias(name, sprintf(ealiasechofmt, value, value));
@@ -178,7 +180,7 @@ function add_project_environment(proj,  names, values, n, i)
   for (i=0; i<n; i++) {
     if (values[i]) {
       setenv("e" proj "_e" i, values[i]);
-      if (names[i]) {
+      if (names[i] && names[i] != "init") {
 	setenv("e" proj "_" names[i], values[i]);
 	setenv(names[i], values[i]);
 	alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
@@ -219,18 +221,11 @@ function clear_current_project(  i)
 {
   # take all enames and unset them
   for(i=0; i<emax; i++) {
-    if (enames[i] == "deinit") {
-      printf("%s;", evalues[i]);
-    }
-  }
-  for(i=0; i<emax; i++) {
     delete_environment(i, enames[i]);
   }
-  delete evalues;
-  delete enames;
 }
 
-function create_project(proj, n,  i)
+function create_project(proj, n,  i, projfile, values, names)
 {
   if (n == 0) {
     n = EMAXDEFAULT;
@@ -240,21 +235,21 @@ function create_project(proj, n,  i)
   set_current_project(ehome, ehost, proj);
   eproj = proj
   proj = ehome "/" eproj
-  eprojfile = proj ".project";
+  projfile = proj ".project";
   if ((getline < sprintf("%s.oldproject", proj)) > 0) {
-    system("mv " proj ".oldproject " eprojfile);
+    system("mv " proj ".oldproject " projfile);
   }
-  emax = read_project(eprojfile, evalues, enames);
+  emax = read_project(projfile, values, names);
   if (emax == 0) {
     emax = n;
-    write_project(eprojfile, evalue, enames);
+  }
+  write_project(projfile, values, names);
+  for(i=0; i<emax; i++) {
+    add_environment(i, names[i], values[i]);
   }
   for(i=0; i<emax; i++) {
-    add_environment(i, enames[i], evalues[i]);
-  }
-  for(i=0; i<emax; i++) {
-    if (enames[i] == "init") {
-      printf("%s;", evalues[i]);
+    if (names[i] == "init") {
+      printf("%s;", values[i]);
     }
   }
 }
@@ -290,7 +285,6 @@ function project(arg,   proj, projnm, n)
     } else if (n != 0 && emax != n) {
       resize_project(n);
     }
-    write_project(eprojfile, evalues, enames);
   }
   list_projects();
 }

@@ -121,7 +121,7 @@ function alias(name, value)
   printf(ealiasfmt, name, value);
 }
 
-function aliaseawk(name, value)
+function alias_eawk(name, value)
 {
   if (isbourne(eshell)) {
     alias(name, sprintf("%s/e.awk %s $*", ehome, value));
@@ -135,14 +135,16 @@ function unalias(name)
   printf(eunaliasfmt, name);
 }
 
-function add_environment(entry, name, value, aliasecho)
+function add_environment(entry, name, value)
 {
   aliaseval("es" entry, "store " entry);
   aliaseval("en" entry, "name " entry);
   aliaseval("ev" entry, "value " entry);
 
   setenv("e" entry, value);
-  setenv("e" eproj "_e" entry, value);
+  if (value) {
+    setenv("e" eproj "_e" entry, value);
+  }
   alias("e" entry, sprintf(ealiasechofmt, value, value));
   if (entry == 0) {
     alias("e", sprintf(ealiasechofmt, value, value));
@@ -165,15 +167,14 @@ function delete_environment(entry, name)
   unsetenv("e" eproj "_e" entry);
   if (name) {
     unalias(name);
-    unsetenv("e" name);
-    unsetenv("e" eproj "_e" entry);
+    unsetenv(name);
+    unsetenv("e" proj "_" name);
   }
 }
 
-function add_project_environment(proj,  projfile, names, values, n, i)
+function add_project_environment(proj,  names, values, n, i)
 {
-  projfile = ehome "/" proj ".project";
-  n = read_project(projfile, values, names);
+  n = read_project(ehome "/" proj ".project", values, names);
   for (i=0; i<n; i++) {
     if (values[i]) {
       setenv("e" proj "_e" i, values[i]);
@@ -186,10 +187,9 @@ function add_project_environment(proj,  projfile, names, values, n, i)
   }
 }
 
-function delete_project_environment(proj,  projfile, names, values, n, i)
+function delete_project_environment(proj,  names, values, n, i)
 {
-  projfile = ehome "/" proj ".project";
-  n = read_project(projfile, values, names);
+  n = read_project(ehome "/" proj ".project", values, names);
   for (i=0; i<n; i++) {
     unsetenv("e" proj "_e" i);
     if (names[i]) {
@@ -538,9 +538,9 @@ function init(arg,  i, projs)
     add_project_environment(projs[i]);
   }
 
-  aliaseawk("eh", "help");
-  aliaseawk("el", "list");
-  aliaseawk("em", "mapping");
+  alias_eawk("eh", "help");
+  alias_eawk("el", "list");
+  alias_eawk("em", "mapping");
   aliaseval("ei", "init " eshell);
   aliaseval("eq", "quit " eshell);
   aliaseval("ep", "proj");

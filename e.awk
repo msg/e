@@ -225,6 +225,11 @@ function list_projects(  proj, leader, projs, i, n, names, values)
 
 function clear_current_project(  i)
 {
+  for(i=0; i<emax; i++) {
+    if (names[i] == "deinit") {
+      printf("%s;", values[i]);
+    }
+  }
   # take all enames and unset them
   for(i=0; i<emax; i++) {
     delete_environment(i, enames[i]);

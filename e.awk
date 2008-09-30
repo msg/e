@@ -391,14 +391,18 @@ function value(arg,  entry, newname, val)
   add_name(entry, newname);
 }
 
-function eval(arg,  entry, e, i)
+function eval(arg,  entry)
 {
   entry = ARGV[arg++];
-  e = evalues[entry];
-  for (; arg < ARGC; arg++) {
-    e = e " " ARGV[arg];
+  printf("%s\n", evalues[entry]);
+}
+
+function evalrange(arg,  range, i)
+{
+  split(ARGV[arg++], range, "-");
+  for (i=range[1]; i<=range[2]; i++) {
+    printf("%s\n", evalues[i]);
   }
-  printf("%s\n", e);
 }
 
 function list(arg,  i, proj)
@@ -509,6 +513,8 @@ function help(arg)
       "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
       "evaluate/execute slot value with args (e=e0)");
+  printf("er" NO ""GR"start-end"NO":         %s\n",
+      "evaluate/execute slots from start to end");
   printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");
   printf(CY "em " NO "[" GR "-a" NO "]:             %s\n",
@@ -545,6 +551,7 @@ function init(arg,  i, projs)
   aliaseval("eq", "quit " eshell);
   aliaseval("ep", "proj");
   aliaseval("erp", "rmproj");
+  aliaseval("er", "evalrange");
   aliaseval("ex", "exchange");
   aliaseval("eu", "rotate up");
   aliaseval("ew", "rotate down");
@@ -590,7 +597,7 @@ BEGIN {
   CY="\x1b[36;01m"
 
   EMAXDEFAULT=30
-  split("eh el em ei eq ep erp ex eu ew e", ecommands) 
+  split("eh el em ei eq ep erp ex eu ew er e", ecommands) 
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";
@@ -626,6 +633,8 @@ BEGIN {
     value(arg);
   } else if(cmd == "eval") {
     eval(arg);
+  } else if(cmd == "evalrange") {
+    evalrange(arg);
   } else if(cmd == "list") {
     list(arg);
   } else if(cmd == "mapping") {

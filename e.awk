@@ -215,17 +215,25 @@ function list_projects(  proj, leader, projs, i, n, names, values)
   }
 }
 
+function clear_current_project(  i)
+{
+  # take all enames and unset them
+  for(i=0; i<emax; i++) {
+    if (enames[i] == "deinit") {
+      printf("%s;", evalues[i]);
+    }
+    delete_environment(i, enames[i]);
+  }
+  delete evalues;
+  delete enames;
+}
+
 function create_project(proj, n,  i)
 {
   if (n == 0) {
     n = EMAXDEFAULT;
   }
-  # take all enames and unset them
-  for(i=0; i<emax; i++) {
-    delete_environment(i, enames[i]);
-  }
-  delete evalues;
-  delete enames;
+  clear_current_project()
   add_project_environment(eproj);
   set_current_project(ehome, ehost, proj);
   eproj = proj
@@ -241,6 +249,9 @@ function create_project(proj, n,  i)
   }
   for(i=0; i<emax; i++) {
     add_environment(i, enames[i], evalues[i]);
+    if (enames[i] == "init") {
+      printf("%s;", evalues[i]);
+    }
   }
 }
 
@@ -397,11 +408,11 @@ function eval(arg,  entry)
   printf("%s\n", evalues[entry]);
 }
 
-function evalrange(arg,  range, i)
+function evalrange(arg,  ranges, i)
 {
-  split(ARGV[arg++], range, "-");
-  for (i=range[1]; i<=range[2]; i++) {
-    printf("%s\n", evalues[i]);
+  split(ARGV[arg++], ranges, ",");
+  for (i in ranges) {
+    printf("%s\n", evalues[ranges[i]]);
   }
 }
 
@@ -513,8 +524,8 @@ function help(arg)
       "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
       "evaluate/execute slot value with args (e=e0)");
-  printf(CY "er" NO " "GR"start-end"NO":         %s\n",
-      "evaluate/execute slots from start to end");
+  printf(CY "er" NO " "GR"slot"NO"[,"GR"slot"NO"]*:     %s\n",
+      "evaluate/execute each slot specified in order");
   printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");
   printf(CY "em " NO "[" GR "-a" NO "]:             %s\n",
@@ -573,9 +584,7 @@ function quit(arg,  shell, i, projs)
   for (i in ecommands) {
     unalias(ecommands[i])
   }
-  for (i=0; i<emax; i++) {
-    delete_environment(i, enames[i]);
-  }
+  clear_current_project();
 
   projects_list(projs)
   for(i in projs) {

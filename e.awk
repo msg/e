@@ -408,9 +408,9 @@ function eval(arg,  entry)
 
 function evalrange(arg,  ranges, i)
 {
-  split(ARGV[arg++], ranges, "_");
-  for (i in ranges) {
-    printf("%s\n", evalues[ranges[i]]);
+  split(ARGV[arg++], ranges, "-");
+  for (i=ranges[1]; i<= ranges[2]; i++) {
+    printf("%s\n", evalues[i]);
   }
 }
 

@@ -34,7 +34,7 @@ function read_project(projfile, values, names,  i, j)
   i = 0;
   while ((getline < projfile) > 0) {
     values[i] = $1;
-    for(j=2; j<NF-1; j++) {
+    for(j=2; j<NF; j++) {
       values[i] = values[i] "," $j;
     }
     names[i++] = $NF;

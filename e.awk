@@ -182,6 +182,7 @@ function add_project_environment(proj,  names, values, n, i)
       continue;
     }
     setenv("e" proj "_e" i, values[i]);
+    alias("e" proj "_e" i, sprintf(ealiasechofmt, values[i], values[i]));
     if (!names[i]) {
       continue;
     }
@@ -226,8 +227,8 @@ function list_projects(  proj, leader, projs, i, n, names, values)
 function clear_current_project(  i)
 {
   for(i=0; i<emax; i++) {
-    if (names[i] == "deinit") {
-      printf("%s;", values[i]);
+    if (enames[i] == "deinit") {
+      printf("%s;", evalues[i]);
     }
   }
   # take all enames and unset them

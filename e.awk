@@ -26,7 +26,7 @@ function set_current_project(home, host, proj,  file)
   close(file);
 }
 
-function read_project(projfile, values, names,  i)
+function read_project(projfile, values, names,  i, j)
 {
   delete values;
   delete names;
@@ -34,7 +34,10 @@ function read_project(projfile, values, names,  i)
   i = 0;
   while ((getline < projfile) > 0) {
     values[i] = $1;
-    names[i++] = $2;
+    for(j=2; j<NF-1; j++) {
+      values[i] = values[i] "," $j;
+    }
+    names[i++] = $NF;
   }
   close(projfile);
   return i

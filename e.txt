@@ -132,6 +132,13 @@ important one is 'eh'.  'eh' will show the e commands available.
   project is selected (init) or when a another project is selected (deinit).
   The 'init' will also be evaluated when e is first initialized.
 
+  Slot 'deinit' requires special care.  If any slots are referenced,
+  they need to be e<proj>_<name-or-e#> because of when e evaluates
+  expressions.  When an 'ep <proj>' is evaluated, several evaluations
+  occur.  Because the 'deinit' will be evaluated after the project has
+  already been changed, the e<proj>_<name-or-e#> must be used.
+  Otherwise, the 'deinit' will evaluate the new project's 'deinit' instead.
+
   Other slot management commands:
 
   The command 'el [<project>]' will list the <project> slots.  If

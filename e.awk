@@ -581,6 +581,11 @@ function init(arg,  i, projs)
   for(i=0; i<emax; i++) {
     add_environment(i, enames[i], evalues[i]);
   }
+  for(i=0; i<emax; i++) {
+    if (enames[i] == "init") {
+      printf("%s;", evalues[i]);
+    }
+  }
 
   if (iscsh(shell)) {
     unsetenv("e");

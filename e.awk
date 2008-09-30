@@ -499,7 +499,7 @@ function help(arg)
 {
   printf(CY "ep"NO" ["GR"proj"NO" ["GR"nslots"NO"]]:  %s\n",
       "display proj(s) or set/create/resize proj with nslots");
-  printf(CY "erp" NO " " GR "<proj>" NO ":          %s\n",
+  printf(CY "erp" NO " " GR "proj" NO ":            %s\n",
       "remove proj (cannot be current)");
   printf(CY "es" NO "["GR"0-#"NO"] "GR"value"NO":       %s\n",
       "store value to slot 0-# (es=es0) (empty clears)");
@@ -509,10 +509,10 @@ function help(arg)
       "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
       "evaluate/execute slot value with args (e=e0)");
-  printf(CY "el" NO ":                  %s\n",
+  printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");
-  printf(CY "em" NO ":                  %s\n",
-      "list env to dir mapping of current proj");
+  printf(CY "em " NO "[" GR "-a" NO "]:             %s\n",
+      "list env to dir mapping of current proj (-a=all vars)");
   printf(CY "ex" NO " " GR "from to" NO ":          %s\n",
       "exchange slots from and to");
   printf(CY "eu" NO " [" GR "num" NO "]:            %s\n",

@@ -222,6 +222,8 @@ function clear_current_project(  i)
     if (enames[i] == "deinit") {
       printf("%s;", evalues[i]);
     }
+  }
+  for(i=0; i<emax; i++) {
     delete_environment(i, enames[i]);
   }
   delete evalues;
@@ -233,7 +235,7 @@ function create_project(proj, n,  i)
   if (n == 0) {
     n = EMAXDEFAULT;
   }
-  clear_current_project()
+  clear_current_project();
   add_project_environment(eproj);
   set_current_project(ehome, ehost, proj);
   eproj = proj
@@ -249,6 +251,8 @@ function create_project(proj, n,  i)
   }
   for(i=0; i<emax; i++) {
     add_environment(i, enames[i], evalues[i]);
+  }
+  for(i=0; i<emax; i++) {
     if (enames[i] == "init") {
       printf("%s;", evalues[i]);
     }

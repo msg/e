@@ -97,8 +97,8 @@ important one is 'eh'.  'eh' will show the e commands available.
 
   The env also contains per project variables.  They can be referenced
   $e<project-name>_<var>, where var is an actual name of a slot or e# 
-  referencing the index.  The evaluation (e#) commands are only setup
-  for the current project. 
+  referencing the index.  They may be evaluated via e<project-name>_<var>
+  as well.
 
   The environment variables also contain $<name> for each project.  If
   there are multiple projects with $<name> set, they will be loaded

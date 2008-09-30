@@ -410,6 +410,7 @@ function evalrange(arg,  ranges, i)
 {
   split(ARGV[arg++], ranges, "-");
   for (i=ranges[1]; i<= ranges[2]; i++) {
+    echo(evalues[i]);
     printf("%s\n", evalues[i]);
   }
 }

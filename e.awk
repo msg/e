@@ -577,7 +577,6 @@ function init(arg,  i, projs)
   aliaseval("ex", "exchange");
   aliaseval("eu", "rotate up");
   aliaseval("ew", "rotate down");
-  aliaseval("ec", "clear");
 
   for(i=0; i<emax; i++) {
     add_environment(i, enames[i], evalues[i]);

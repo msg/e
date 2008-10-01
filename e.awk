@@ -240,7 +240,7 @@ function clear_current_project(  i)
   }
 }
 
-function create_project(proj, n,  i, projfile, values, names)
+function select_project(proj, n,  i, projfile, values, names)
 {
   if (n == 0) {
     n = EMAXDEFAULT;
@@ -249,6 +249,7 @@ function create_project(proj, n,  i, projfile, values, names)
   add_project_environment(eproj);
   set_current_project(ehome, ehost, proj);
   eproj = proj
+  setenv("EPROJECT", eproj);
   proj = ehome "/" eproj
   projfile = proj ".project";
   if ((getline < sprintf("%s.oldproject", proj)) > 0) {
@@ -296,7 +297,7 @@ function project(arg,   proj, projnm, n)
   if (proj) {
     n = ARGV[arg++];
     if (proj != eproj) {
-      create_project(proj, n)
+      select_project(proj, n)
     } else if (n != 0 && emax != n) {
       resize_project(n);
     }
@@ -592,7 +593,7 @@ function init(arg,  i, projs)
   alias_eawk("em", "mapping");
   aliaseval("ei", "init " eshell);
   aliaseval("eq", "quit " eshell);
-  aliaseval("ep", "proj");
+  aliaseval("ep", "project");
   aliaseval("erp", "rmproj");
   aliaseval("er", "evalrange");
   aliaseval("ex", "exchange");
@@ -655,7 +656,7 @@ BEGIN {
   eproj = get_current_project(ehome, ehost);
   eprojfile = ehome "/" eproj ".project";
   if ((getline < eprojfile) < 0) {
-    create_project(eproj, EMAXDEFAULT);
+    select_project(eproj, EMAXDEFAULT);
   }
   close(eprojfile);
   emax = read_project(eprojfile, evalues, enames);
@@ -667,7 +668,7 @@ BEGIN {
     init(arg);
   } else if(cmd == "quit") {
     quit(arg);
-  } else if(cmd == "proj") {
+  } else if(cmd == "project") {
     project(arg);
   } else if (cmd == "rmproj") {
     rmproj(arg);

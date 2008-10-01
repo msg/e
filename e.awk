@@ -612,7 +612,6 @@ function init(arg,  i, projs)
   if (iscsh(shell)) {
     unsetenv("e");
   }
-  echo("<<< " GR "e" NO " project: " YL eproj NO " >>>");
 }
 
 function quit(arg,  shell, i, projs)

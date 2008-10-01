@@ -454,16 +454,29 @@ function list(arg,  i, proj, s)
   }
 }
 
-function mapping(arg,  projs, proj, i, j, n, names, values)
+function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
 {
-  fmt = "$%s,'%s',%s\n";
   #rc = system("tty >/dev/null")
   #if (rc) {
   #  fmt = "$%s:%s\n";
   #} else {
   #  fmt = CY "$%s" NO ":%s\n";
   #}
-  if (ARGV[arg++] == "-a") {
+  all = 0;
+  color = 0;
+  for (;arg < ARGC; arg++) {
+    if (ARGV[arg] == "-a") {
+      all = 1;
+    } else if(ARGV[arg] == "-c") {
+      color = 1;
+    }
+  }
+  if (color) {
+    fmt = CY "$%s" NO ",'%s'," GR" %s" NO "\n";
+  } else {
+    fmt = "$%s,'%s',%s\n";
+  }
+  if (all) {
     projects_list(projs);
     for (j in projs) {
       if (projs[j] == eproj) {
@@ -567,6 +580,7 @@ function init(arg,  i, projs)
   eshell = ARGV[arg++];
   set_formats(eshell);
   setenv("ESHELL", eshell);
+  setenv("EPROJECT", eproj);
 
   projects_list(projs)
   for(i in projs) {
@@ -597,6 +611,7 @@ function init(arg,  i, projs)
   if (iscsh(shell)) {
     unsetenv("e");
   }
+  echo("<<< " GR "e" NO " project: " YL eproj NO " >>>");
 }
 
 function quit(arg,  shell, i, projs)
@@ -606,13 +621,13 @@ function quit(arg,  shell, i, projs)
   for (i in ecommands) {
     unalias(ecommands[i])
   }
-  clear_current_project();
 
   projects_list(projs)
   for(i in projs) {
     delete_project_environment(projs[i]);
   }
 
+  unsetenv("EPROJECT")
   unsetenv("ESHELL")
   printf("\n");
 }

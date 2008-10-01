@@ -560,8 +560,8 @@ function help(arg)
       "evaluate/execute each slot between '_' specified in order");
   printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");
-  printf(CY "em " NO "[" GR "-a" NO "]:             %s\n",
-      "list env to dir mapping of current proj (-a=all vars)");
+  printf(CY "em " NO "[" GR "-a" NO "] [" GR "-c" NO "]:        %s\n",
+      "list name/value mapping (-a=all projs, -c=color)");
   printf(CY "ex" NO " " GR "from to" NO ":          %s\n",
       "exchange slots from and to");
   printf(CY "eu" NO " [" GR "num" NO "]:            %s\n",

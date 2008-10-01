@@ -85,13 +85,13 @@ function set_formats(shell)
     eunsetenvfmt = "unset %s\n";
     ealiasfmt = "%s() {\n  %s \n}\n";
     eunaliasfmt = "unset -f %s\n";;
-    ealiasechofmt = "eval \"%s\"";
+    eevalfmt = "eval \"%s\"";
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
     ealiasfmt = "alias %s '%s';";
     eunaliasfmt = "unalias %s;";
-    ealiasechofmt = "eval \"%s\";";
+    eevalfmt = "eval \"%s\";";
   }
 }
 
@@ -150,14 +150,14 @@ function add_environment(entry, name, value)
   if (value) {
     setenv("e" eproj "_e" entry, value);
   }
-  alias("e" entry, sprintf(ealiasechofmt, value, value));
+  alias("e" entry, sprintf(eevalfmt, value));
   if (entry == 0) {
-    alias("e", sprintf(ealiasechofmt, value, value));
+    alias("e", sprintf(eevalfmt, value));
   }
   if (name) {
     setenv(name, value);
     setenv("e" eproj "_" name, value);
-    alias(name, sprintf(ealiasechofmt, value, value));
+    alias(name, sprintf(eevalfmt, value));
   }
 }
 
@@ -185,15 +185,15 @@ function add_project_environment(proj,  names, values, n, i)
       continue;
     }
     setenv("e" proj "_e" i, values[i]);
-    alias("e" proj "_e" i, sprintf(ealiasechofmt, values[i], values[i]));
+    alias("e" proj "_e" i, sprintf(eevalfmt, values[i]));
     if (!names[i]) {
       continue;
     }
     setenv("e" proj "_" names[i], values[i]);
-    alias("e" proj "_" names[i], sprintf(ealiasechofmt, values[i], values[i]));
+    alias("e" proj "_" names[i], sprintf(eevalfmt, values[i]));
     if (names[i] != "init" || names[i] != "deinit") {
       setenv(names[i], values[i]);
-      alias(names[i], sprintf(ealiasechofmt, values[i], values[i]));
+      alias(names[i], sprintf(eevalfmt, values[i]));
     }
   }
 }

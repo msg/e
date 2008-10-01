@@ -556,8 +556,8 @@ function help(arg)
       "make slot with name and value");
   printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
       "evaluate/execute slot value with args (e=e0)");
-  printf(CY "er" NO " "GR"slot"NO"[_"GR"slot"NO"]*:     %s\n",
-      "evaluate/execute each slot between '_' specified in order");
+  printf(CY "er" NO " "GR"slot"NO"[-"GR"slot"NO"]*:     %s\n",
+      "evaluate/execute each slot between '-' specified in order");
   printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");
   printf(CY "em " NO "[" GR "-a" NO "] [" GR "-c" NO "]:        %s\n",

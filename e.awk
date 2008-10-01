@@ -91,7 +91,7 @@ function set_formats(shell)
     eunsetenvfmt = "unsetenv %s;";
     ealiasfmt = "alias %s '%s';";
     eunaliasfmt = "unalias %s;";
-    ealiasechofmt = "echo \"%s\"; eval \"%s\"";
+    ealiasechofmt = "echo \"%s\"; eval \"%s\";";
   }
 }
 

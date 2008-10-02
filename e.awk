@@ -191,7 +191,7 @@ function add_project_environment(proj,  names, values, n, i)
     }
     setenv("e" proj "_" names[i], values[i]);
     alias("e" proj "_" names[i], sprintf(eevalfmt, values[i]));
-    if (names[i] != "init" || names[i] != "deinit") {
+    if (names[i] != "init" && names[i] != "deinit") {
       setenv(names[i], values[i]);
       alias(names[i], sprintf(eevalfmt, values[i]));
     }

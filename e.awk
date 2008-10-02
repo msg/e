@@ -493,7 +493,9 @@ function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
 	}
 	if (names[i]) {
 	  printf(fmt, names[i], values[i], projs[j]);
-	  printf(fmt, "e" projs[j] "_" names[i], values[i], projs[j]);
+	  if (all == 2) {
+	    printf(fmt, "e" projs[j] "_" names[i], values[i], projs[j]);
+	  }
 	}
       }
     }

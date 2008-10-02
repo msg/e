@@ -581,6 +581,7 @@ function init(arg,  i, projs)
   eshell = ARGV[arg++];
   set_formats(eshell);
   setenv("ESHELL", eshell);
+  setenv("EHOME", ehome);
   setenv("EPROJECT", eproj);
 
   projects_list(projs)
@@ -628,6 +629,7 @@ function quit(arg,  shell, i, projs)
   }
 
   unsetenv("EPROJECT")
+  unsetenv("EHOME")
   unsetenv("ESHELL")
   printf("\n");
 }

@@ -468,6 +468,8 @@ function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
   for (;arg < ARGC; arg++) {
     if (ARGV[arg] == "-a") {
       all = 1;
+    } else if(ARGV[arg] == "-A") {
+      all = 2;
     } else if(ARGV[arg] == "-c") {
       color = 1;
     }
@@ -486,8 +488,12 @@ function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
       proj = ehome "/" projs[j] ".project";
       n = read_project(proj, values, names);
       for (i=0; i<n; i++) {
+        if (values[i] && all == 2) {
+	  printf(fmt, "e" projs[j] "_e" i, values[i], projs[j]);
+	}
 	if (names[i]) {
 	  printf(fmt, names[i], values[i], projs[j]);
+	  printf(fmt, "e" projs[j] "_" names[i], values[i], projs[j]);
 	}
       }
     }
@@ -560,8 +566,8 @@ function help(arg)
       "evaluate/execute each slot between '-' specified in order");
   printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
       "list all slots titles by current proj");
-  printf(CY "em " NO "[" GR "-a" NO "] [" GR "-c" NO "]:        %s\n",
-      "list name/value mapping (-a=all projs, -c=color)");
+  printf(CY "em " NO "[" GR "-[Aac]" NO "]:         %s\n",
+      "list name,value,proj (-a=proj names,-A=every var,-c=color)");
   printf(CY "ex" NO " " GR "from to" NO ":          %s\n",
       "exchange slots from and to");
   printf(CY "eu" NO " [" GR "num" NO "]:            %s\n",

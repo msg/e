@@ -26,26 +26,32 @@ function set_current_project(home, host, proj,  file)
   close(file);
 }
 
-function read_project(projfile, values, names,  i, j)
+function read_project(proj, values, names,  projfile, i, j, last)
 {
   delete values;
   delete names;
   FS = ",";
   i = 0;
+  last = 0;
+  projfile = ehome "/" proj ".project";
   while ((getline < projfile) > 0) {
     values[i] = $1;
     for(j=2; j<NF; j++) {
       values[i] = values[i] "," $j;
     }
+    if (values[i]) {
+      last = i;
+    }
     names[i++] = $NF;
   }
   close(projfile);
-  return i
+  return last + 1;
 }
 
-function write_project(projfile, values, names,  i)
+function write_project(proj, values, names, n,  projfile, i)
 {
-  for(i=0;i<emax;i++) {
+  projfile = ehome "/" proj ".project";
+  for(i=0;i<n;i++) {
     printf("%s,%s\n", values[i], names[i]) > projfile;
   }
   close(projfile);
@@ -60,6 +66,7 @@ function projects_list(projs,  projnm, i)
     gsub("\\.project", "", projnm);
     projs[i++] = projnm;
   }
+  return i;
 }
 
 function hostname(  host)
@@ -97,21 +104,24 @@ function set_formats(shell)
 
 function echo(s)
 {
-  printf("echo -n \"%s\";echo;", s);
+  printf("echo '%s';", s);
 }
 
 function setenv(name, value)
 {
+  #echo(sprintf("setenv %s %s", name, value));
   printf(esetenvfmt, name, value);
 }
 
 function unsetenv(name)
 {
+  #echo(sprintf("unsetenv %s", name));
   printf(eunsetenvfmt, name);
 }
 
 function aliaseval(name, value)
 {
+  #echo(sprintf("aliaseval %s %s", name, value));
   if (isbourne(eshell)) {
     printf("%s() {\n  eval \"$(%s/e.awk %s $*)\"\n}\n",
 	   name, ehome, value);
@@ -123,11 +133,13 @@ function aliaseval(name, value)
 
 function alias(name, value)
 {
+  #echo(sprintf("alias %s %s", name, value));
   printf(ealiasfmt, name, value);
 }
 
 function alias_eawk(name, value)
 {
+  #echo(sprintf("alias_eawk %s %s", name, value));
   if (isbourne(eshell)) {
     alias(name, sprintf("%s/e.awk %s $*", ehome, value));
   } else if (iscsh(eshell)) {
@@ -137,60 +149,53 @@ function alias_eawk(name, value)
 
 function unalias(name)
 {
+  #echo(sprintf("unalias %s %s", name));
   printf(eunaliasfmt, name);
 }
 
-function add_environment(entry, name, value)
+function add_environment(entry)
 {
-  aliaseval("es" entry, "store " entry);
-  aliaseval("en" entry, "name " entry);
-  aliaseval("ev" entry, "value " entry);
-
-  setenv("e" entry, value);
-  if (value) {
-    setenv("e" eproj "_e" entry, value);
+  setenv("e" entry, evalues[entry]);
+  if (evalues[entry]) {
+    setenv("e" eproj "_e" entry, evalues[entry]);
   }
-  alias("e" entry, sprintf(eevalfmt, value));
+  alias("e" entry, sprintf(eevalfmt, evalues[entry]));
   if (entry == 0) {
-    alias("e", sprintf(eevalfmt, value));
+    alias("e", sprintf(eevalfmt, evalues[entry]));
   }
-  if (name) {
-    setenv(name, value);
-    setenv("e" eproj "_" name, value);
-    alias(name, sprintf(eevalfmt, value));
+  if (enames[entry]) {
+    setenv(enames[entry], evalues[entry]);
+    setenv("e" eproj "_" enames[entry], evalues[entry]);
+    alias(enames[entry], sprintf(eevalfmt, evalues[entry]));
   }
 }
 
-function delete_environment(entry, name)
+function delete_environment(entry)
 {
-  unalias("es" entry);
-  unalias("en" entry);
-  unalias("ev" entry);
-
   unalias("e" entry);
   unsetenv("e" entry);
   unsetenv("e" eproj "_e" entry);
-  if (name) {
-    unalias(name);
-    unsetenv(name);
-    unsetenv("e" proj "_" name);
+  if (enames[entry]) {
+    unalias(enames[entry]);
+    unsetenv(enames[entry]);
+    unsetenv("e" proj "_" enames[entry]);
   }
 }
 
 function add_project_environment(proj,  names, values, n, i)
 {
-  n = read_project(ehome "/" proj ".project", values, names);
+  n = read_project(proj, values, names);
   for (i=0; i<n; i++) {
     if (!values[i]) {
       continue;
     }
-    setenv("e" proj "_e" i, values[i]);
-    alias("e" proj "_e" i, sprintf(eevalfmt, values[i]));
+    setenv(proj "_e" i, values[i]);
+    alias(proj "_e" i, sprintf(eevalfmt, values[i]));
     if (!names[i]) {
       continue;
     }
-    setenv("e" proj "_" names[i], values[i]);
-    alias("e" proj "_" names[i], sprintf(eevalfmt, values[i]));
+    setenv(proj "_" names[i], values[i]);
+    alias(proj "_" names[i], sprintf(eevalfmt, values[i]));
     if (names[i] != "init" && names[i] != "deinit") {
       setenv(names[i], values[i]);
       alias(names[i], sprintf(eevalfmt, values[i]));
@@ -200,12 +205,12 @@ function add_project_environment(proj,  names, values, n, i)
 
 function delete_project_environment(proj,  names, values, n, i)
 {
-  n = read_project(ehome "/" proj ".project", values, names);
+  n = read_project(proj, values, names);
   for (i=0; i<n; i++) {
-    unsetenv("e" proj "_e" i);
+    unsetenv(proj "_e" i);
     if (names[i]) {
-      unsetenv("e" proj "_" names[i]);
-      unalias("e" proj "_" names[i]);
+      unsetenv(proj "_" names[i]);
+      unalias(proj "_" names[i]);
       unsetenv(names[i]);
       unalias(names[i]);
     }
@@ -216,14 +221,15 @@ function list_projects(  proj, leader, projs, i, n, names, values)
 {
   projects_list(projs); 
   for (i in projs) {
-    proj = ehome "/" projs[i] ".project";
-    n = read_project(proj, values, names);
+    n = read_project(projs[i], values, names);
     if (eproj == projs[i]) {
-      leader = ">" YL;
+      leader = ">";
+      color = YL;
     } else {
-      leader = " " CY;
+      leader = " ";
+      color = CY;
     }
-    echo(leader projs[i] NO " " n);
+    echo(sprintf(leader "%2d " color "%-20s " NO, n, projs[i]));
   }
 }
 
@@ -234,13 +240,12 @@ function clear_current_project(  i)
       printf("%s;", evalues[i]);
     }
   }
-  # take all enames and unset them
   for(i=0; i<emax; i++) {
-    delete_environment(i, enames[i]);
+    delete_environment(i);
   }
 }
 
-function select_project(proj, n,  i, projfile, values, names)
+function select_project(proj, n,  i, projfile)
 {
   if (n == 0) {
     n = EMAXDEFAULT;
@@ -255,13 +260,10 @@ function select_project(proj, n,  i, projfile, values, names)
   if ((getline < sprintf("%s.oldproject", proj)) > 0) {
     system("mv " proj ".oldproject " projfile);
   }
-  emax = read_project(projfile, values, names);
-  if (emax == 0) {
-    emax = n;
-  }
-  write_project(projfile, values, names);
+  emax = read_project(eproj, values, names);
+  write_project(eproj, values, names, emax);
   for(i=0; i<emax; i++) {
-    add_environment(i, names[i], values[i]);
+    add_environment(i);
   }
   for(i=0; i<emax; i++) {
     if (names[i] == "init") {
@@ -270,42 +272,16 @@ function select_project(proj, n,  i, projfile, values, names)
   }
 }
 
-function resize_project(n)
-{
-  if (n < emax) {
-    for (;emax > n; emax--) {
-      if (evalues[emax-1]) {
-        break;
-      }
-      delete_environment(emax-1, enames[emax-1])
-      delete evalues[emax-1];
-      delete enames[emax-1];
-    }
-  } else {
-    for (;emax < n; emax++) {
-      evalues[emax] = "";
-      enames[emax] = "";
-      add_environment(emax, enames[emax], evalues[emax])
-    }
-  }
-  write_project(eprojfile, evalues, enames);
-}
-
-function project(arg,   proj, projnm, n)
+function projects(arg,   proj, projnm, n)
 {
   proj = ARGV[arg++];
-  if (proj) {
-    n = ARGV[arg++];
-    if (proj != eproj) {
-      select_project(proj, n)
-    } else if (n != 0 && emax != n) {
-      resize_project(n);
-    }
+  if (proj && proj != eproj) {
+    select_project(proj, n)
   }
   list_projects();
 }
 
-function rmproj(arg,  proj)
+function rm(arg,  proj)
 {
   proj = ARGV[arg++];
   if (proj == eproj) {
@@ -319,32 +295,9 @@ function rmproj(arg,  proj)
     echo(sprintf("cannot rename project '%s'", proj));
   }
   for (i=0; i<emax; i++) {
-    add_environment(i, enames[i], evalues[i]);
+    add_environment(i);
   }
   list_projects();
-}
-
-function add_value(entry, value)
-{
-  if (value && enames[entry] == value) {
-    echo(sprintf("invalid value '%s' cannot be same as name", value));
-    return;
-  }
-  delete_environment(entry, enames[entry]);
-  evalues[entry] = value;
-  add_environment(entry, enames[entry], evalues[entry]);
-  write_project(eprojfile, evalues, enames);
-  printf("\n");
-}
-
-function store(arg,  entry, value)
-{
-  entry = ARGV[arg++];
-  value = ARGV[arg++];
-  for (; arg<ARGC; arg++) {
-    value = value " " ARGV[arg];
-  }
-  add_value(entry, value);
 }
 
 function isreserved(value)
@@ -370,76 +323,76 @@ function remove_name(name,  i)
 {
   for (i=0; i<emax; i++) {
     if (enames[i] == name) {
-      delete_environment(i, enames[entry]);
+      if (name) {
+        echo(sprintf("removing %s from slot %d", name, i));
+      }
+      delete_environment(i);
       enames[i] = "";
-      add_environment(i, enames[i], evalues[i]);
+      add_environment(i);
     }
   }
 }
 
-function add_name(entry, newname,  reserved)
+function add_name_value(entry, newname, newvalue)
 {
   # validate name
-  if (newname && evalues[entry] == newname) {
+  if (newname && newvalue == newname) {
     echo(sprintf("invalid name '%s' cannot be same as value", newname));
     return;
   }
-  reserved = isreserved(newname);
-  if (reserved) {
-    echo(sprintf("invalid name '%s' for entry %d is reserved",
-	  reserved, entry));
+  if (isreserved(newname)) {
+    echo(sprintf("invalid name '%s' for entry %d is reserved", newname));
     return
   }
+  echo(sprintf("slot %d \"%s\" \"%s\" to project %s",
+  	entry, newname, newvalue, eproj));
   remove_name(newname);
+  delete_environment(entry);
+  evalues[entry] = newvalue;
   enames[entry] = newname;
-  add_environment(entry, enames[entry], evalues[entry]);
-  write_project(eprojfile, evalues, enames);
-  printf("\n");
+  add_environment(entry);
+  if (entry >= emax) {
+    emax = entry + 1;
+  }
+  write_project(eproj, evalues, enames, emax);
+}
+
+function value(arg,  entry, newvalue)
+{
+  entry = ARGV[arg++];
+  newvalue = ARGV[arg++];
+  for (; arg<ARGC; arg++) {
+    newvalue = newvalue " " ARGV[arg];
+  }
+  add_name_value(entry, enames[entry], newvalue);
 }
 
 function name(arg,  entry, newname, i)
 {
   entry = ARGV[arg++];
   newname = ARGV[arg++];
-  add_name(entry, newname);
+  add_name_value(entry, newname, evalues[entry]);
 }
 
-function value(arg,  entry, newname, val)
+function store(arg,  entry, newname, newvalue)
 {
   entry = ARGV[arg++];
   newname = ARGV[arg++];
-  val = ARGV[arg++];
+  newvalue = ARGV[arg++];
   for (; arg<ARGC; arg++) {
-    val = val " " ARGV[arg];
+    newvalue = newvalue " " ARGV[arg];
   }
-  add_value(entry, val);
-  add_name(entry, newname);
+  add_name_value(entry, newname, newvalue);
 }
 
-function eval(arg,  entry)
-{
-  entry = ARGV[arg++];
-  printf("%s\n", evalues[entry]);
-}
-
-function evalrange(arg,  ranges, i)
-{
-  split(ARGV[arg++], ranges, "-");
-  for (i=ranges[1]; i<= ranges[2]; i++) {
-    echo(evalues[i]);
-    printf("%s\n", evalues[i]);
-  }
-}
-
-function list(arg,  i, proj, s)
+function ls(arg,  i, proj, s)
 {
   proj = ARGV[arg++]
   if (proj && proj != eproj) {
     eproj = proj;
-    eprojfile = ehome "/" proj ".project";
-    emax = read_project(eprojfile, evalues, enames);
+    emax = read_project(eproj, evalues, enames);
   }
-  printf(YL eproj NO ":\n");
+  printf(YL "%-64s" NO "name/slot\n", eproj ":");
   for(i=0; i<emax; i++) {
     s = evalues[i];
     if (length(s) > 60) {
@@ -455,14 +408,8 @@ function list(arg,  i, proj, s)
   }
 }
 
-function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
+function env(arg,  projs, proj, i, j, n, names, values, all, color)
 {
-  #rc = system("tty >/dev/null")
-  #if (rc) {
-  #  fmt = "$%s:%s\n";
-  #} else {
-  #  fmt = CY "$%s" NO ":%s\n";
-  #}
   all = 0;
   color = 0;
   for (;arg < ARGC; arg++) {
@@ -475,7 +422,7 @@ function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
     }
   }
   if (color) {
-    fmt = CY "$%s" NO ",'%s'," GR" %s" NO "\n";
+    fmt = CY "$%s" NO ",'%s'," GR"%s" NO "\n";
   } else {
     fmt = "$%s,'%s',%s\n";
   }
@@ -485,17 +432,20 @@ function mapping(arg,  projs, proj, i, j, n, names, values, all, color)
       if (projs[j] == eproj) {
 	continue;
       }
-      proj = ehome "/" projs[j] ".project";
-      n = read_project(proj, values, names);
+      n = read_project(projs[j], values, names);
       for (i=0; i<n; i++) {
-        if (values[i] && all == 2) {
-	  printf(fmt, "e" projs[j] "_e" i, values[i], projs[j]);
+        if (!values[i]) {
+	  continue;
 	}
-	if (names[i]) {
-	  printf(fmt, names[i], values[i], projs[j]);
-	  if (all == 2) {
-	    printf(fmt, "e" projs[j] "_" names[i], values[i], projs[j]);
-	  }
+	if (all == 2) {
+	  printf(fmt, projs[j] "_e" i, values[i], projs[j]);
+	}
+	if (!names[i]) {
+	  continue;
+	}
+	printf(fmt, names[i], values[i], projs[j]);
+	if (all == 2) {
+	  printf(fmt, projs[j] "_" names[i], values[i], projs[j]);
 	}
       }
     }
@@ -513,75 +463,50 @@ function exchange(arg,  from, to, tmpvalue, tmpname)
   to = ARGV[arg++];
 
   printf("echo exchange %d %d;", from, to);
-  delete_environment(from, enames[to]);
-  delete_environment(to, enames[to]);
+  delete_environment(from);
+  delete_environment(to);
   tmpvalue = evalues[from];
   tmpname = enames[from];
   evalues[from] = evalues[to];
   enames[from] = enames[to];
   evalues[to] = tmpvalue;
   enames[to] = tmpname;
-  add_environment(from, enames[from], evalues[from]);
-  add_environment(to, enames[to], evalues[to]);
-  write_project(eprojfile, evalues, enames);
-}
-
-function rotate(arg,  direction, positions, start, new, newvalues, newnames)
-{
-  direction = ARGV[arg++];
-  positions = ARGV[arg++];
-  printf("echo rotate %s %d;", direction, positions);
-  if (direction == "up") {
-    start = positions;
-  } else if (direction == "down") {
-    start = emax - positions;
+  add_environment(from);
+  add_environment(to);
+  if (from >= emax) {
+    emax = from + 1;
   }
-  for(i=0; i<emax; i++) {
-    new = (start+i)%emax;
-    newvalues[i] = evalues[new];
-    newnames[i] = enames[new];
+  if (to >= emax) {
+    emax = to + 1;
   }
-  for(i=0; i<emax; i++) {
-    delete_environment(i, enames[i]);
-    evalues[i] = newvalues[i];
-    enames[i] = newnames[i];
-    add_environment(i, enames[i], evalues[i]);
-  }
-  write_project(eprojfile, evalues, enames);
+  write_project(eproj, evalues, enames, emax);
 }
 
 function help(arg)
 {
-  printf(CY "ep"NO" ["GR"proj"NO" ["GR"nslots"NO"]]:  %s\n",
-      "display proj(s) or set/create/resize proj with nslots");
-  printf(CY "erp" NO " " GR "proj" NO ":            %s\n",
-      "remove proj (cannot be current)");
-  printf(CY "es" NO "["GR"0-#"NO"] "GR"value"NO":       %s\n",
-      "store value to slot 0-# (es=es0) (empty clears)");
-  printf(CY "en" NO "["GR"0-#"NO"] "GR"name"NO":        %s\n",
-      "make environment variable name point to slot");
-  printf(CY "ev" NO "["GR"0-#"NO"] "GR"name val"NO":    %s\n",
-      "make slot with name and value");
-  printf(CY "e" NO "," CY "e" NO "["GR"0-#"NO"] ["GR"args"NO"]:     %s\n",
-      "evaluate/execute slot value with args (e=e0)");
-  printf(CY "er" NO " "GR"slot"NO"[-"GR"slot"NO"]*:     %s\n",
-      "evaluate/execute each slot between '-' specified in order");
-  printf(CY "el" NO " [" GR "proj" NO "]:           %s\n",
-      "list all slots titles by current proj");
-  printf(CY "em " NO "[" GR "-[Aac]" NO "]:         %s\n",
-      "list name,value,proj (-a=proj names,-A=every var,-c=color)");
-  printf(CY "ex" NO " " GR "from to" NO ":          %s\n",
-      "exchange slots from and to");
-  printf(CY "eu" NO " [" GR "num" NO "]:            %s\n",
-      "rotate slots up 1 or num positions");
-  printf(CY "ew" NO " [" GR "num" NO "]:            %s\n",
-      "rotate slots up 1 or num positions");
-  printf(CY "ei" NO ":                  %s\n",
-      "(re)initialize env and alises");
-  printf(CY "eq" NO ":                  %s\n",
-      "remove env and alises");
-  printf(CY "eh" NO ":                  %s\n",
-      "print this help message");
+  printf(CY "ep " YL "[project]" NO ":\n")
+  printf("\tdisplay projects, if " YL "project " NO \
+  	" specified, set it to current\n");
+  printf(CY "erp " NO  YL "project" NO ":\n");
+  printf("\tremove " YL "project " NO "(cannot be current)\n");
+  printf(CY "ev " NO YL "0-# value" NO ":\n");
+  printf("\tstore " YL "value " NO "to slot " YL "0-# " NO \
+  	"(empty value clears)\n");
+  printf(CY "en " NO YL "0-# name" NO ":\n");
+  printf("\tmake env variable " YL "name " NO "point to slot " YL "#" NO \
+  	" (empty name clears)\n");
+  printf(CY "es " NO YL "0-# name value" NO ":\n");
+  printf("\tmake slot " YL "# " NO "with " YL "name " NO "and " \
+  	YL "value " NO "(empty name & value clears)\n");
+  printf(CY "el " NO YL "[project]" NO ":\n");
+  printf("\tlist all slots titles in " YL "project " NO "(default current)\n");
+  printf(CY "em " NO YL "-[Aac]" NO ":\n");
+  printf("\tlist name,value,proj (-a=names,-A=names & eproj_e<var>,-c=color)\n");
+  printf(CY "ex " NO GR "from to" NO ":\n");
+  printf("\texchange slots from and to\n");
+  printf(CY "ei" NO ":\n\t(re)initialize environment and alises\n");
+  printf(CY "eq" NO ":\n\tremove env and alises\n");
+  printf(CY "eh" NO ":\n\tprint this help message\n");
 }
 
 function init(arg,  i, projs)
@@ -598,19 +523,19 @@ function init(arg,  i, projs)
   }
 
   alias_eawk("eh", "help");
-  alias_eawk("el", "list");
-  alias_eawk("em", "mapping");
+  alias_eawk("el", "ls");
+  alias_eawk("em", "env");
   aliaseval("ei", "init " eshell);
   aliaseval("eq", "quit " eshell);
-  aliaseval("ep", "project");
-  aliaseval("erp", "rmproj");
-  aliaseval("er", "evalrange");
+  aliaseval("ep", "projects");
+  aliaseval("erp", "rm");
+  aliaseval("es", "store");
+  aliaseval("en", "name");
+  aliaseval("ev", "value");
   aliaseval("ex", "exchange");
-  aliaseval("eu", "rotate up");
-  aliaseval("ew", "rotate down");
 
   for(i=0; i<emax; i++) {
-    add_environment(i, enames[i], evalues[i]);
+    add_environment(i);
   }
   for(i=0; i<emax; i++) {
     if (enames[i] == "init") {
@@ -652,8 +577,8 @@ BEGIN {
   MG="\x1b[35;01m"
   CY="\x1b[36;01m"
 
-  EMAXDEFAULT=30
-  split("eh el em ei eq ep erp ex eu ew er e", ecommands) 
+  EMAXDEFAULT=10
+  split("eh el em ei eq ep erp ex e", ecommands) 
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";
@@ -665,11 +590,12 @@ BEGIN {
   eproj = get_current_project(ehome, ehost);
   eprojfile = ehome "/" eproj ".project";
   if ((getline < eprojfile) < 0) {
+    printf("create %s\n", eprojfile);
     select_project(eproj, EMAXDEFAULT);
   }
   close(eprojfile);
-  emax = read_project(eprojfile, evalues, enames);
-  arg=1;
+  emax = read_project(eproj, evalues, enames);
+  arg = 1;
   cmd = ARGV[arg++];
   if (cmd == "help") {
     help(arg);
@@ -677,28 +603,22 @@ BEGIN {
     init(arg);
   } else if(cmd == "quit") {
     quit(arg);
-  } else if(cmd == "project") {
-    project(arg);
-  } else if (cmd == "rmproj") {
-    rmproj(arg);
+  } else if(cmd == "projects") {
+    projects(arg);
+  } else if (cmd == "rm") {
+    rm(arg);
   } else if(cmd == "store") {
     store(arg);
   } else if(cmd == "name") {
     name(arg);
   } else if (cmd == "value") {
     value(arg);
-  } else if(cmd == "eval") {
-    eval(arg);
-  } else if(cmd == "evalrange") {
-    evalrange(arg);
-  } else if(cmd == "list") {
-    list(arg);
-  } else if(cmd == "mapping") {
-    mapping(arg);
+  } else if(cmd == "ls") {
+    ls(arg);
+  } else if(cmd == "env") {
+    env(arg);
   } else if(cmd == "exchange") {
     exchange(arg);
-  } else if(cmd == "rotate") {
-    rotate(arg);
   } else {
     printf("invalid command '%s'\n", cmd);
   }

@@ -501,7 +501,7 @@ function help(arg)
   printf(CY "el " NO YL "[project]" NO ":\n");
   printf("\tlist all slots titles in " YL "project " NO "(default current)\n");
   printf(CY "em " NO YL "-[Aac]" NO ":\n");
-  printf("\tlist name,value,proj (-a=names,-A=names & eproj_e<var>,-c=color)\n");
+  printf("\tlist name,value,proj (-a=names,-A=names & proj_e<var>,-c=color)\n");
   printf(CY "ex " NO YL "from to" NO ":\n");
   printf("\texchange slots " YL "from " NO "and " YL "to" NO "\n");
   printf(CY "ei" NO ":\n\t(re)initialize environment and alises\n");

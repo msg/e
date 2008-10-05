@@ -341,7 +341,7 @@ function add_name_value(entry, newname, newvalue)
     return;
   }
   if (isreserved(newname)) {
-    echo(sprintf("invalid name '%s' for entry %d is reserved", newname));
+    echo(sprintf("invalid name '%s' for entry %d is reserved", newname, entry));
     return
   }
   echo(sprintf("slot %d \"%s\" \"%s\" to project %s",

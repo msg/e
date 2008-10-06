@@ -14,6 +14,7 @@ function get_current_project(home, host,  file, proj)
   file = home "/current-" host;
   if ((getline proj < file) < 0) {
     proj = "default"
+    set_current_proejct(host, host, proj);
   }
   close(file);
   return proj

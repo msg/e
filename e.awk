@@ -11,7 +11,7 @@
 
 function get_current_project(home, host,  file, proj)
 {
-  file = home "/" host "-current";
+  file = home "/current-" host;
   if ((getline proj < file) < 0) {
     proj = "default"
   }
@@ -21,7 +21,7 @@ function get_current_project(home, host,  file, proj)
 
 function set_current_project(home, host, proj,  file)
 {
-  file = home "/" host "-current";
+  file = home "/current-" host;
   printf("%s\n", proj) > file;
   close(file);
 }

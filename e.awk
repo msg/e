@@ -264,7 +264,7 @@ function select_project(proj, n,  i, projfile)
     add_environment(i);
   }
   for(i=0; i<emax; i++) {
-    if (names[i] == "init") {
+    if (enames[i] == "init") {
       printf("%s;", values[i]);
     }
   }

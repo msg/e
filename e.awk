@@ -461,8 +461,12 @@ function exchange(arg,  from, to, tmpvalue, tmpname)
   to = ARGV[arg++];
 
   printf("echo exchange %d %d;", from, to);
-  delete_environment(from);
-  delete_environment(to);
+  if (from < emax) {
+    delete_environment(from);
+  }
+  if (to < emax) {
+    delete_environment(to);
+  }
   tmpvalue = evalues[from];
   tmpname = enames[from];
   evalues[from] = evalues[to];

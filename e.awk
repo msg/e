@@ -265,7 +265,7 @@ function select_project(proj, n,  i, projfile)
   }
   for(i=0; i<emax; i++) {
     if (enames[i] == "init") {
-      printf("%s;", values[i]);
+      printf("%s;", evalues[i]);
     }
   }
 }

@@ -157,15 +157,12 @@ function add_environment(entry)
 {
   setenv("e" entry, evalues[entry]);
   if (evalues[entry]) {
-    setenv("e" eproj "_e" entry, evalues[entry]);
+    setenv(eproj "_e" entry, evalues[entry]);
   }
   alias("e" entry, sprintf(eevalfmt, evalues[entry]));
-  if (entry == 0) {
-    alias("e", sprintf(eevalfmt, evalues[entry]));
-  }
   if (enames[entry]) {
     setenv(enames[entry], evalues[entry]);
-    setenv("e" eproj "_" enames[entry], evalues[entry]);
+    setenv(eproj "_" enames[entry], evalues[entry]);
     alias(enames[entry], sprintf(eevalfmt, evalues[entry]));
   }
 }
@@ -251,7 +248,7 @@ function select_project(proj, n,  i, projfile)
     n = EMAXDEFAULT;
   }
   clear_current_project();
-  add_project_environment(eproj);
+  add_project_environment(proj);
   set_current_project(ehome, ehost, proj);
   eproj = proj
   setenv("EPROJECT", eproj);
@@ -260,8 +257,8 @@ function select_project(proj, n,  i, projfile)
   if ((getline < sprintf("%s.oldproject", proj)) > 0) {
     system("mv " proj ".oldproject " projfile);
   }
-  emax = read_project(eproj, values, names);
-  write_project(eproj, values, names, emax);
+  emax = read_project(eproj, evalues, enames);
+  write_project(eproj, evalues, enames, emax);
   for(i=0; i<emax; i++) {
     add_environment(i);
   }

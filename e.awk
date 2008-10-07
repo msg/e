@@ -144,50 +144,57 @@ function unalias(name)
   printf(eunaliasfmt, name);
 }
 
+function add_env(proj, entry, name, value)
+{
+  if (value) {
+    setenv(proj "_e" entry, value);
+    alias(proj "_e" entry, sprintf(eevalfmt, value));
+  }
+  if (name) {
+    setenv(name, value)
+    setenv(proj "_" name, value);
+    alias(proj "_" name, value);
+    if (name == "init" || name == "deinit") {
+      if (proj != eproj) {
+	return;
+      }
+    }
+    alias(name, value);
+  }
+}
+
+function del_env(proj, entry, name, value)
+{
+  if (value) {
+    unalias(proj "_e" entry);
+  }
+  unsetenv(proj "_e" entry);
+  if (name) {
+    unalias(name);
+    unsetenv(proj "_" name);
+    unsetenv(name);
+  }
+}
+
 function add_environment(entry)
 {
   setenv("e" entry, evalues[entry]);
-  if (evalues[entry]) {
-    setenv(eproj "_e" entry, evalues[entry]);
-  }
   alias("e" entry, sprintf(eevalfmt, evalues[entry]));
-  if (enames[entry]) {
-    setenv(enames[entry], evalues[entry]);
-    setenv(eproj "_" enames[entry], evalues[entry]);
-    alias(enames[entry], sprintf(eevalfmt, evalues[entry]));
-  }
+  add_env(eproj, entry, enames[entry], evalues[entry]);
 }
 
 function delete_environment(entry)
 {
   unalias("e" entry);
   unsetenv("e" entry);
-  unsetenv(eproj "_e" entry);
-  if (enames[entry]) {
-    unalias(enames[entry]);
-    unsetenv(enames[entry]);
-    unsetenv(proj "_" enames[entry]);
-  }
+  del_env(eproj, entry, enames[entry], evalues[entry]);
 }
 
 function add_project_environment(proj,  names, values, n, i)
 {
   n = read_project(proj, values, names);
   for (i=0; i<n; i++) {
-    if (!values[i]) {
-      continue;
-    }
-    setenv(proj "_e" i, values[i]);
-    alias(proj "_e" i, sprintf(eevalfmt, values[i]));
-    if (!names[i]) {
-      continue;
-    }
-    setenv(proj "_" names[i], values[i]);
-    alias(proj "_" names[i], sprintf(eevalfmt, values[i]));
-    if (names[i] != "init" && names[i] != "deinit") {
-      setenv(names[i], values[i]);
-      alias(names[i], sprintf(eevalfmt, values[i]));
-    }
+    add_env(proj, i, names[i], values[i]);
   }
 }
 
@@ -195,13 +202,7 @@ function delete_project_environment(proj,  names, values, n, i)
 {
   n = read_project(proj, values, names);
   for (i=0; i<n; i++) {
-    unsetenv(proj "_e" i);
-    if (names[i]) {
-      unsetenv(proj "_" names[i]);
-      unalias(proj "_" names[i]);
-      unsetenv(names[i]);
-      unalias(names[i]);
-    }
+    delete_env(proj, i, names[i], values[i]);
   }
 }
 

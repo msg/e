@@ -309,6 +309,10 @@ function projects(arg,   proj, projnm, n)
 
 function rm(arg,  proj)
 {
+  if (arg >= ARGC) {
+    echo("usage: erp project");
+    return;
+  }
   proj = ARGV[arg++];
   if (proj == "default") {
     echo(sprintf("cannot remove default project '%s'", proj));
@@ -489,6 +493,10 @@ function env(arg,  projs, proj, i, j, n, names, values, flags, args)
 
 function exchange(arg,  from, to, tmpvalue, tmpname)
 {
+  if (arg + 1 >= ARGC) {
+    echo("usage: ex # #");
+    return;
+  }
   from = ARGV[arg++];
   to = ARGV[arg++];
 

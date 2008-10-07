@@ -388,7 +388,7 @@ function ls(arg,  i, proj, s, t)
     eproj = proj;
     emax = read_project(eproj, evalues, enames);
   }
-  echo(sprintf(YL "%-64s" NO "name/slot", eproj ":"));
+  echo(sprintf(YL "%-65s" NO "$name", eproj ":"));
   for(i=0; i<emax; i++) {
     s = evalues[i];
     if (length(s) > 60) {
@@ -397,10 +397,11 @@ function ls(arg,  i, proj, s, t)
       t = sprintf(CY "%2d" NO ": %-60s ", i, s);
     }
     if (enames[i]) {
-      t = t sprintf("(" CY "$%s" NO ")", enames[i]);
+      t = t sprintf("$%-10s", enames[i]);
     } else {
-      t = t sprintf("  - " CY "%d" NO " -", i);
+      t = t sprintf("%-11s", "");
     }
+    t = t sprintf(" :" CY "%d" NO, i);
     echo(t)
   }
 }

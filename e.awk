@@ -41,6 +41,7 @@ function getopt(arg, opts, flags, args,  a, i, s, flag)
 function hostname(  host)
 {
   "hostname -s"|getline host; 
+  close("hostname -s");
   return host
 }
 
@@ -112,15 +113,15 @@ function unalias(name)
   printf(eunaliasfmt, name);
 }
 
-function get_current_project(home,  file)
+function get_current_project(  file)
 {
-  file = home "/current-" hostname();
+  file = ehome "/current-" hostname();
   if ((getline eproj < file) < 0) {
     eproj = "default"
     set_current_project(eproj);
   }
   close(file);
-  eprojfile = home "/" eproj ".project";
+  eprojfile = ehome "/" eproj ".project";
 }
 
 function set_current_project(proj,  file)
@@ -353,9 +354,6 @@ function remove_name(name,  i)
 {
   for (i=0; i<emax; i++) {
     if (enames[i] == name) {
-      if (name) {
-        echo(sprintf("removing %s from slot %d", name, i));
-      }
       delete_environment(i);
       enames[i] = "";
       add_environment(i);
@@ -627,7 +625,7 @@ BEGIN {
   eshell = ENVIRON["ESHELL"];
   set_formats(eshell);
 
-  get_current_project(ehome);
+  get_current_project();
   emax = read_project(eproj, evalues, enames);
 
   arg = 1;

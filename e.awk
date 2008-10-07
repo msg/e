@@ -1,73 +1,41 @@
 #!/bin/awk -f
 
 # globals:
-#  ehome - environment variable $EHOST
-#  ehost - `hostname -s`
-#  eproj - <ehome>/<ehost>-currentproject
+#  ehome - environment variable $EHOME
+#  eproj - <ehome>/<hostname>-currentproject
 #  eprojfile - <ehome>/<eproj>.project
 #  evalues - environment values
 #  enames - environment names
 #  emax - number of entries
 
-function get_current_project(home, host,  file, proj)
+function getopt_single(arg, flag, opts, flags,  o)
 {
-  file = home "/current-" host;
-  if ((getline proj < file) < 0) {
-    proj = "default"
-    set_current_project(home, host, proj);
-  }
-  close(file);
-  return proj
-}
-
-function set_current_project(home, host, proj,  file)
-{
-  file = home "/current-" host;
-  printf("%s\n", proj) > file;
-  close(file);
-}
-
-function read_project(proj, values, names,  projfile, i, j, last)
-{
-  delete values;
-  delete names;
-  FS = ",";
-  i = 0;
-  last = 0;
-  projfile = ehome "/" proj ".project";
-  while ((getline < projfile) > 0) {
-    values[i] = $1;
-    for(j=2; j<NF; j++) {
-      values[i] = values[i] "," $j;
+  for (o=1; o<=length(opts); o++) {
+    if (substr(opts, o, 1) != flag) {
+      continue;
+    } 
+    if (substr(opts, o+1, 1) == ":") {
+      flags[flag] = ARGV[++arg];
+    } else {
+      flags[flag] = 1;
     }
-    if (values[i]) {
-      last = i;
+  }
+  return arg;
+}
+
+function getopt(arg, opts, flags, args,  a, i, s, flag)
+{
+  for (a=0 ;arg < ARGC; arg++) {
+    if (substr(ARGV[arg], 1, 1) != "-") {
+      args[a++] = ARGV[arg];
+      continue;
     }
-    names[i++] = $NF;
+    s = substr(ARGV[arg], 2);
+    for (i=1; i<=length(s); i++) {
+      flag = substr(s, i, 1);
+      arg = getopt_single(arg, flag, opts, flags);
+    }
   }
-  close(projfile);
-  return last + 1;
-}
-
-function write_project(proj, values, names, n,  projfile, i)
-{
-  projfile = ehome "/" proj ".project";
-  for(i=0;i<n;i++) {
-    printf("%s,%s\n", values[i], names[i]) > projfile;
-  }
-  close(projfile);
-}
-
-function projects_list(projs,  projnm, i)
-{
-  FS="/";
-  i = 0
-  while (sprintf("ls %s/*.project", ehome) |getline) {
-    projnm=$NF
-    gsub("\\.project", "", projnm);
-    projs[i++] = projnm;
-  }
-  return i;
 }
 
 function hostname(  host)
@@ -142,6 +110,67 @@ function unalias(name)
 {
   #echo(sprintf("unalias %s %s", name));
   printf(eunaliasfmt, name);
+}
+
+function get_current_project(home,  file)
+{
+  file = home "/current-" hostname();
+  if ((getline eproj < file) < 0) {
+    eproj = "default"
+    set_current_project(eproj);
+  }
+  close(file);
+  eprojfile = home "/" eproj ".project";
+}
+
+function set_current_project(proj,  file)
+{
+  file = ehome "/current-" hostname();
+  printf("%s\n", proj) > file;
+  close(file);
+}
+
+function read_project(proj, values, names,  projfile, i, j, last)
+{
+  delete values;
+  delete names;
+  FS = ",";
+  i = 0;
+  last = 0;
+  projfile = ehome "/" proj ".project";
+  while ((getline < projfile) > 0) {
+    values[i] = $1;
+    for(j=2; j<NF; j++) {
+      values[i] = values[i] "," $j;
+    }
+    if (values[i]) {
+      last = i;
+    }
+    names[i++] = $NF;
+  }
+  close(projfile);
+  return last + 1;
+}
+
+function write_project(proj, values, names, n,  projfile, i)
+{
+  projfile = ehome "/" proj ".project";
+  for(i=0;i<n;i++) {
+    printf("%s,%s\n", values[i], names[i]) > projfile;
+  }
+  close(projfile);
+}
+
+function projects_list(projs,  projnm, i)
+{
+  FS="/";
+  i = 0
+  while (sprintf("ls %s/*.project", ehome) |getline) {
+    projnm=$NF
+    gsub("\\.project", "", projnm);
+    projs[i++] = projnm;
+  }
+  return i;
 }
 
 function add_env(proj, entry, name, value)
@@ -266,7 +295,7 @@ function select_project(proj,  i, projfile)
 
   add_current_project();
 
-  set_current_project(ehome, ehost, eproj);
+  set_current_project(eproj);
 }
 
 function projects(arg,   proj, projnm, n)
@@ -356,6 +385,10 @@ function add_name_value(entry, newname, newvalue)
 
 function value(arg,  entry, newvalue)
 {
+  if (arg >= ARGC) {
+    echo("usage: ev # [value]");
+    return;
+  }
   entry = ARGV[arg++];
   newvalue = ARGV[arg++];
   for (; arg<ARGC; arg++) {
@@ -366,6 +399,10 @@ function value(arg,  entry, newvalue)
 
 function name(arg,  entry, newname, i)
 {
+  if (arg >= ARGC) {
+    echo("usage: en # [name]");
+    return;
+  }
   entry = ARGV[arg++];
   newname = ARGV[arg++];
   add_name_value(entry, newname, evalues[entry]);
@@ -373,6 +410,10 @@ function name(arg,  entry, newname, i)
 
 function store(arg,  entry, newname, newvalue)
 {
+  if (arg >= ARGC) {
+    echo("usage: es # [name] [value]");
+    return;
+  }
   entry = ARGV[arg++];
   newname = ARGV[arg++];
   newvalue = ARGV[arg++];
@@ -407,25 +448,15 @@ function ls(arg,  i, proj, s, t)
   }
 }
 
-function env(arg,  projs, proj, i, j, n, names, values, all, color)
+function env(arg,  projs, proj, i, j, n, names, values, flags, args)
 {
-  all = 0;
-  color = 0;
-  for (;arg < ARGC; arg++) {
-    if (ARGV[arg] == "-a") {
-      all = 1;
-    } else if(ARGV[arg] == "-A") {
-      all = 2;
-    } else if(ARGV[arg] == "-c") {
-      color = 1;
-    }
-  }
-  if (color) {
+  getopt(arg, "aAc", flags, args);
+  if (flags["c"]) {
     fmt = CY "$%s" NO ",%s," GR"%s" NO "";
   } else {
     fmt = "$%s,%s,%s";
   }
-  if (all) {
+  if (flags["A"] || flags["a"]) {
     projects_list(projs);
     for (j in projs) {
       if (projs[j] == eproj) {
@@ -436,14 +467,14 @@ function env(arg,  projs, proj, i, j, n, names, values, all, color)
         if (!values[i]) {
 	  continue;
 	}
-	if (all == 2) {
+	if (flags["A"]) {
 	  echo(sprintf(fmt, projs[j] "_e" i, values[i], projs[j]));
 	}
 	if (!names[i]) {
 	  continue;
 	}
 	echo(sprintf(fmt, names[i], values[i], projs[j]));
-	if (all == 2) {
+	if (flags["A"]) {
 	  echo(sprintf(fmt, projs[j] "_" names[i], values[i], projs[j]));
 	}
       }
@@ -520,6 +551,12 @@ function init(arg,  i, projs)
   setenv("EHOME", ehome);
   setenv("EPROJECT", eproj);
 
+  if ((getline < eprojfile) < 0) {
+    echo(sprintf("create %s\n", eprojfile));
+    select_project(eproj);
+  }
+  close(eprojfile);
+
   projects_list(projs)
   for(i in projs) {
     add_project_environment(projs[i]);
@@ -573,23 +610,16 @@ BEGIN {
   MG="\x1b[35;01m"
   CY="\x1b[36;01m"
 
-  EMAXDEFAULT=10
   split("eh el em ei eq ep erp ex e", ecommands) 
+  
   ehome = ENVIRON["EHOME"];
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";
   }
   eshell = ENVIRON["ESHELL"];
   set_formats(eshell);
-  ehost = hostname();
 
-  eproj = get_current_project(ehome, ehost);
-  eprojfile = ehome "/" eproj ".project";
-  if ((getline < eprojfile) < 0) {
-    echo(sprintf("create %s\n", eprojfile));
-    select_project(eproj);
-  }
-  close(eprojfile);
+  get_current_project(ehome);
   emax = read_project(eproj, evalues, enames);
 
   arg = 1;

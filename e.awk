@@ -55,6 +55,11 @@ function iscsh(shell)
   return shell == "csh";
 }
 
+function isidentifier(s)
+{
+  return s ~ "[A-Za-z_][A-Za-z0-9_]";
+}
+
 function set_formats(shell)
 {
   if (isbourne(shell)) {
@@ -302,6 +307,10 @@ function select_project(proj,  i, projfile)
 function projects(arg,   proj, projnm, n)
 {
   proj = ARGV[arg++];
+  if (proj && !isidentifier(proj)) {
+    echo(sprintf("invalid project name \"%s\"", proj));
+    return;
+  }
   if (proj && proj != eproj) {
     select_project(proj)
   }
@@ -371,6 +380,10 @@ function add_name_value(entry, newname, newvalue)
   if (isreserved(newname)) {
     echo(sprintf("invalid name '%s' for entry %d is reserved", newname, entry));
     return
+  }
+  if (!isidentifier(newname)) {
+    echo(sprintf("invalid name %s", newname));
+    return;
   }
   echo(sprintf("slot %d \"%s\" \"%s\" to project %s",
   	entry, newname, newvalue, eproj));

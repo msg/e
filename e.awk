@@ -281,6 +281,8 @@ function clear_current_project(  i)
   for(i=0; i<emax; i++) {
     delete_environment(i);
   }
+
+  add_project_environment(eproj);
 }
 
 function select_project(proj,  i, projfile)
@@ -300,7 +302,6 @@ function select_project(proj,  i, projfile)
   write_project(eproj, evalues, enames, emax);
 
   add_current_project();
-
   set_current_project(eproj);
 }
 

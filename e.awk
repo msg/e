@@ -565,8 +565,8 @@ function help(arg)
   	" specified, set it to current"));
   echo(sprintf(CY "erp " NO  YL "project" NO ":"));
   echo(sprintf("\tremove " YL "project " NO "(if current, default selected)"));
-  echo(sprintf(CY "eep " NO  YL "project" NO ":"));
-  echo(sprintf("\tedit " YL "project " NO "using $EDITOR, sync environment"));
+  echo(sprintf(CY "eep " NO  YL "[project]" NO ":"));
+  echo(sprintf("\tedit " YL "project " NO "and resync (default current)"));
   echo(sprintf(CY "ev " NO YL "0-# value" NO ":"));
   echo(sprintf("\tstore " YL "value " NO "to slot " YL "0-# " NO \
   	"(empty value clears)"));

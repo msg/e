@@ -62,18 +62,17 @@ function isidentifier(s)
 
 function set_formats(shell)
 {
+  eevalfmt = "eval \"%s\"";
   if (isbourne(shell)) {
     esetenvfmt = "export %s='%s'\n";
     eunsetenvfmt = "unset %s\n";
     ealiasfmt = "%s() {\n  %s \n}\n";
     eunaliasfmt = "unset -f %s\n";;
-    eevalfmt = "eval \"%s\"";
   } else if (iscsh(shell)) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
     ealiasfmt = "alias %s '%s';";
     eunaliasfmt = "unalias %s;";
-    eevalfmt = "eval \"%s\";";
   }
 }
 
@@ -529,6 +528,11 @@ function exchange(arg,  from, to, tmpvalue, tmpname)
   }
   from = ARGV[arg++];
   to = ARGV[arg++];
+  if (from >= emax && to >= emax) {
+    echo(sprintf("from (%d) and to (%d) both > max (%d) slots",
+    	from, to, emax));
+    return;
+  }
 
   printf("echo exchange %d %d;", from, to);
   if (from < emax) {

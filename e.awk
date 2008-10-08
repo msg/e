@@ -389,17 +389,19 @@ function remove_name(name,  i)
 function add_name_value(entry, newname, newvalue)
 {
   # validate name
-  if (newname && newvalue == newname) {
-    echo(sprintf("invalid name '%s' cannot be same as value", newname));
-    return;
-  }
-  if (isreserved(newname)) {
-    echo(sprintf("invalid name '%s' for entry %d is reserved", newname, entry));
-    return
-  }
-  if (!isidentifier(newname)) {
-    echo(sprintf("invalid name %s", newname));
-    return;
+  if (newname) {
+    if (newvalue == newname) {
+      echo(sprintf("invalid name '%s' cannot be same as value", newname));
+      return;
+    }
+    if (isreserved(newname)) {
+      echo(sprintf("invalid name '%s' for entry %d is reserved", newname, entry));
+      return
+    }
+    if (!isidentifier(newname)) {
+      echo(sprintf("invalid name %s", newname));
+      return;
+    }
   }
   echo(sprintf("slot %d \"%s\" \"%s\" to project %s",
   	entry, newname, newvalue, eproj));

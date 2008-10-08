@@ -57,7 +57,7 @@ function iscsh(shell)
 
 function isidentifier(s)
 {
-  return s ~ "[A-Za-z_][A-Za-z0-9_]";
+  return s ~ "[A-Za-z_][A-Za-z0-9_]*";
 }
 
 function set_formats(shell)

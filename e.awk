@@ -405,7 +405,9 @@ function add_name_value(entry, newname, newvalue)
   echo(sprintf("slot %d \"%s\" \"%s\" to project %s",
   	entry, newname, newvalue, eproj));
   remove_name(newname);
-  delete_environment(entry);
+  if (entry < emax) {
+    delete_environment(entry);
+  }
   evalues[entry] = newvalue;
   enames[entry] = newname;
   add_environment(entry);

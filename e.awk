@@ -469,7 +469,7 @@ function ls(arg,  i, proj, s, t)
   for(i=0; i<emax; i++) {
     s = evalues[i];
     if (length(s) > 60) {
-      t = sprintf(CY "%2d" NO ": %-56s " RD "..." NO, i, substr(s, 1, 56));
+      t = sprintf(CY "%2d" NO ": %-56s " RD "... " NO, i, substr(s, 1, 56));
     } else {
       t = sprintf(CY "%2d" NO ": %-60s ", i, s);
     }

@@ -3,7 +3,6 @@
 # globals:
 #  ehome - environment variable $EHOME
 #  eproj - <ehome>/<hostname>-currentproject
-#  eprojfile - <ehome>/<eproj>.project
 #  evalues - environment values
 #  enames - environment names
 #  emax - number of entries
@@ -11,14 +10,9 @@
 function getopt_single(arg, flag, opts, flags,  o)
 {
   for (o=1; o<=length(opts); o++) {
-    if (substr(opts, o, 1) != flag) {
-      continue;
+    if (substr(opts, o, 1) == flag) {
+      flags[flag] = substr(opts, o+1, 1) == ":" ? ARGV[++arg] : 1;
     } 
-    if (substr(opts, o+1, 1) == ":") {
-      flags[flag] = ARGV[++arg];
-    } else {
-      flags[flag] = 1;
-    }
   }
   return arg;
 }
@@ -41,21 +35,27 @@ function getopt(arg, opts, flags, args,  a, i, s, flag)
 function join(strs, sep,  s, i, n)
 {
    n = asort(strs);
-   for (i=0; i<n; i++) {
-     if (s) {
-       s = s sep strs[i];
-     } else {
-       s = strs[i];
-     }
+   for (i=1; i<=n; i++) {
+     s = s sep strs[i];
    }
-   return s;
+   return substr(s, 2);
+}
+
+function pipe(cmd,  val)
+{
+  cmd | getline val;
+  close(cmd);
+  return val
 }
 
 function hostname(  host)
 {
-  "hostname -s"|getline host; 
-  close("hostname -s");
-  return host
+  return pipe("hostname -s");
+}
+
+function shell(  sh)
+{
+  return pipe("basename $SHELL");
 }
 
 function isbourne(shell)
@@ -73,14 +73,14 @@ function isidentifier(s)
   return s ~ "[A-Za-z_][A-Za-z0-9_]*";
 }
 
-function set_formats(shell)
+function set_formats()
 {
   eevalfmt = "eval \"%s\"";
-  if (isbourne(shell)) {
+  if (isbourne(shell())) {
     esetenvfmt = "export %s='%s'\n";
     eunsetenvfmt = "unset %s\n";
     ealiasfmt = "%s() {\n  %s \n}\n";
-  } else if (iscsh(shell)) {
+  } else if (iscsh(shell())) {
     esetenvfmt = "setenv %s \"%s\";";
     eunsetenvfmt = "unsetenv %s;";
     ealiasfmt = "alias %s '%s';";
@@ -107,10 +107,10 @@ function unsetenv(name)
 function aliaseval(name, value)
 {
   #echo(sprintf("aliaseval %s %s", name, value));
-  if (isbourne(eshell)) {
+  if (isbourne(shell())) {
     printf("%s() {\n  eval \"$(%s/e.awk %s $*)\"\n}\n",
 	   name, ehome, value);
-  } else if (iscsh(eshell)) {
+  } else if (iscsh(shell())) {
     printf("set e=(eval \\\"\\`%s/e.awk %s \\\\!\\*\\`\\\");alias %s \"$e\";",
 	   ehome, value, name);
   }
@@ -125,9 +125,9 @@ function alias(name, value)
 function unalias(name)
 {
   #echo(sprintf("unalias %s %s", name));
-  if (isbourne(eshell)) {
+  if (isbourne(shell())) {
     printf("typeset -f %s >/dev/null && unset -f %s\n", name, name);
-  } else if (iscsh(eshell)) {
+  } else if (iscsh(shell())) {
     printf("unalias %s;", name);
   }
 }
@@ -171,7 +171,6 @@ function get_current_project(  file)
     }
     close(file);
   }
-  eprojfile = ehome "/" eproj ".project";
 }
 
 function set_current_project(proj,  file)
@@ -228,11 +227,7 @@ function projects_list(projs,  i, cmd)
 
 function isinit(name)
 {
-  if (name == "init" || name == "deinit") {
-    return 1;
-  } else {
-    return 0;
-  }
+  return (name == "init" || name == "deinit") ? 1 : 0;
 }
 
 function add_env(proj, entry, name, value)
@@ -341,14 +336,10 @@ function clear_current_project(  i)
   }
 
   delete_evars(ENVIRON["EPROJECTS_" eproj]);
-  #for(i=0; i<emax; i++) {
-  #  delete_environment(i);
-  #}
-
   add_project_environment(eproj);
 }
 
-function select_project(proj,  i, projfile)
+function select_project(proj, temp, i, projfile)
 {
   clear_current_project();
 
@@ -365,18 +356,21 @@ function select_project(proj,  i, projfile)
   write_project(eproj, evalues, enames, emax);
 
   add_current_project();
-  set_current_project(eproj);
+  if (!temp) {
+    set_current_project(eproj);
+  }
 }
 
-function projects(arg,   proj, projnm, n)
+function projects(arg,   args, flags, proj, projnm, n)
 {
-  proj = ARGV[arg++];
+  getopt(arg, "t", flags, args);
+  proj = args[0];
   if (proj && !isidentifier(proj)) {
     echo("invalid project name \"" proj "\"");
     return;
   }
   if (proj && proj != eproj) {
-    select_project(proj)
+    select_project(proj, flags["t"])
   }
   list_projects();
 }
@@ -392,9 +386,6 @@ function rm(arg,  proj)
     echo("cannot remove default project '" proj "'");
     return;
   }
-  if (proj == eproj) {
-    select_project("default");
-  }
   delete_project_environment(proj);
   cmd = sprintf("/bin/mv %s/%s.project %s/%s.oldproject",
 	ehome, proj, ehome, proj);
@@ -402,6 +393,9 @@ function rm(arg,  proj)
     echo("cannot rename project '" proj "'");
   }
   unsetenv("EPROJECTS_" proj);
+  if (proj == eproj) {
+    select_project("default");
+  }
   list_projects();
 }
 
@@ -466,29 +460,13 @@ function add_name_value(entry, newname, newvalue)
   write_project(eproj, evalues, enames, emax);
 }
 
-function value(arg,  entry, newvalue)
+function get_value(arg,  newvalue)
 {
-  if (arg >= ARGC) {
-    echo("usage: ev # [value]");
-    return;
-  }
-  entry = ARGV[arg++];
   newvalue = ARGV[arg++];
   for (; arg<ARGC; arg++) {
     newvalue = newvalue " " ARGV[arg];
   }
-  add_name_value(entry, enames[entry], newvalue);
-}
-
-function name(arg,  entry, newname, i)
-{
-  if (arg >= ARGC) {
-    echo("usage: en # [name]");
-    return;
-  }
-  entry = ARGV[arg++];
-  newname = ARGV[arg++];
-  add_name_value(entry, newname, evalues[entry]);
+  return newvalue;
 }
 
 function store(arg,  entry, newname, newvalue)
@@ -499,11 +477,47 @@ function store(arg,  entry, newname, newvalue)
   }
   entry = ARGV[arg++];
   newname = ARGV[arg++];
-  newvalue = ARGV[arg++];
-  for (; arg<ARGC; arg++) {
-    newvalue = newvalue " " ARGV[arg];
-  }
+  newvalue = get_value(arg);
   add_name_value(entry, newname, newvalue);
+}
+
+function value(arg,  entry, newvalue)
+{
+  if (arg >= ARGC) {
+    echo("usage: ev # [value]");
+    return;
+  }
+  entry = ARGV[arg++];
+  newvalue = get_value(arg);
+  add_name_value(entry, enames[entry], newvalue);
+}
+
+function name(arg,  entry, newname)
+{
+  if (arg >= ARGC) {
+    echo("usage: en # [name]");
+    return;
+  }
+  entry = ARGV[arg++];
+  newname = ARGV[arg++];
+  add_name_value(entry, newname, evalues[entry]);
+}
+
+function change(arg,  entry, name, newvalue)
+{
+  if (argc >= ARGC) {
+    echo("usage ec name [value]");
+    return;
+  }
+  name = ARGV[arg++];
+  newvalue = get_value(arg);
+  for (entry=0; entry<emax; entry++) {
+    if (name == enames[entry]) {
+      add_name_value(entry, name, newvalue);
+      return;
+    }
+  }
+  echo("name " name " not found.");
 }
 
 function ls(arg,  i, proj, s, t)
@@ -521,51 +535,42 @@ function ls(arg,  i, proj, s, t)
     } else {
       t = sprintf(CY "%2d" NO ": %-60s ", i, s);
     }
-    if (enames[i]) {
-      t = t sprintf("$%-10s", enames[i]);
-    } else {
-      t = t sprintf("%-11s", "");
-    }
-    t = t sprintf(" :" CY "%d" NO, i);
+    t = t sprintf("%-11s :" CY "%d" NO, (enames[i] ? "$" enames[i] : ""), i);
     echo(t)
+  }
+}
+
+function echoenv(flags, proj, n, names, values,  fmt)
+{
+  fmt = flags["c"] ? CY "$%s" NO ",%s," GR"%s" NO "" : "$%s,%s,%s";
+  for (i=0; i<n; i++) {
+    if (!values[i]) {
+      continue;
+    }
+    if (eproj == proj && (flags["A"] || flags["a"])) {
+      echo(sprintf(fmt, "e" i, evalues[i], proj));
+    }
+    if (flags["A"]) {
+      echo(sprintf(fmt, proj "_e" i, values[i], rojs));
+    }
+    if (!names[i]) {
+      continue;
+    }
+    echo(sprintf(fmt, names[i], values[i], proj));
+    if (flags["A"]) {
+      echo(sprintf(fmt, proj "_" names[i], values[i], proj));
+    }
   }
 }
 
 function env(arg,  projs, proj, i, j, n, names, values, flags, args)
 {
   getopt(arg, "aAc", flags, args);
-  if (flags["c"]) {
-    fmt = CY "$%s" NO ",%s," GR"%s" NO "";
-  } else {
-    fmt = "$%s,%s,%s";
-  }
-  if (flags["A"] || flags["a"]) {
-    projects_list(projs);
-    for (j in projs) {
-      if (projs[j] == eproj) {
-	continue;
-      }
-      n = read_project(projs[j], values, names);
-      for (i=0; i<n; i++) {
-        if (!values[i]) {
-	  continue;
-	}
-	if (flags["A"]) {
-	  echo(sprintf(fmt, projs[j] "_e" i, values[i], projs[j]));
-	}
-	if (!names[i]) {
-	  continue;
-	}
-	echo(sprintf(fmt, names[i], values[i], projs[j]));
-	if (flags["A"]) {
-	  echo(sprintf(fmt, projs[j] "_" names[i], values[i], projs[j]));
-	}
-      }
-    }
-  }
-  for(i=0;i<emax;i++) {
-    if (enames[i]) {
-      echo(sprintf(fmt, enames[i], evalues[i], eproj));
+  projects_list(projs);
+  for (j in projs) {
+    n = read_project(projs[j], values, names);
+    if (eproj == projs[j] || flags["A"] || flags["a"]) {
+      echoenv(flags, projs[j], n, names, values);
     }
   }
 }
@@ -609,22 +614,26 @@ function exchange(arg,  from, to, tmpvalue, tmpname)
 
 function help(arg)
 {
-  echo(CY "ep " YL "[project]" NO ":");
+  echo(CY "ep " YL "[-t] [project]" NO ":");
   echo("\tdisplay projects, if " YL "project " NO \
   	" specified, set it to current");
+  echo("\t(-t select project only in current shell)");
   echo(CY "erp " NO  YL "project" NO ":");
   echo("\tremove " YL "project " NO "(if current, default selected)");
   echo(CY "eep " NO  YL "[project]" NO ":");
   echo("\tedit " YL "project " NO "and resync (default current)");
-  echo(CY "ev " NO YL "0-# value" NO ":");
-  echo("\tstore " YL "value " NO "to slot " YL "0-# " NO \
-  	"(empty value clears)");
-  echo(CY "en " NO YL "0-# name" NO ":");
-  echo("\tmake env variable " YL "name " NO "point to slot " YL "#" NO \
-  	" (empty name clears)");
-  echo(CY "es " NO YL "0-# name value" NO ":");
+  echo(CY "es " NO YL "0-# [name] [value]" NO ":");
   echo("\tmake slot " YL "# " NO "with " YL "name " NO "and " \
   	YL "value " NO "(empty name & value clears)");
+  echo(CY "ev " NO YL "0-# [value]" NO ":");
+  echo("\tstore " YL "value " NO "to slot " YL "0-# " NO \
+  	"(empty value clears)");
+  echo(CY "en " NO YL "0-# [name]" NO ":");
+  echo("\tmake env variable " YL "name " NO "point to slot " YL "#" NO \
+  	" (empty name clears)");
+  echo(CY "ec " NO YL "name [value]" NO ":");
+  echo("\tchange project variable " YL "name " NO "to " YL "value " \
+	NO " (empty value clears)");
   echo(CY "el " NO YL "[project]" NO ":");
   echo("\tlist all slots titles in " YL "project " NO "(default current)");
   echo(CY "em " NO YL "-[Aac]" NO ":");
@@ -638,31 +647,29 @@ function help(arg)
 
 function init(arg,  i, projs)
 {
-  eshell = ARGV[arg++];
-  set_formats(eshell);
-
   aliaseval("eh", "help");
   aliaseval("el", "ls");
   aliaseval("em", "env");
-  aliaseval("ei", "reinit " eshell);
-  aliaseval("eq", "quit " eshell);
+  aliaseval("ei", "reinit");
+  aliaseval("eq", "quit");
   aliaseval("ep", "projects");
   aliaseval("erp", "rm");
   aliaseval("eep", "edit");
   aliaseval("es", "store");
   aliaseval("en", "name");
   aliaseval("ev", "value");
+  aliaseval("ec", "change");
   aliaseval("ex", "exchange");
 
-  setenv("ESHELL", eshell);
   setenv("EHOME", ehome);
   setenv("EPROJECT", eproj);
 
-  if ((getline < eprojfile) < 0) {
-    echo("created " eprojfile);
+  i = ehome "/" eproj ".project"
+  if ((getline < i) < 0) {
+    echo("created " i);
     select_project(eproj);
   }
-  close(eprojfile);
+  close(i);
 
   projects_list(projs)
   setenv("EPROJECTS", join(projs, ","));
@@ -672,15 +679,13 @@ function init(arg,  i, projs)
 
   add_current_project();
 
-  if (iscsh(shell)) {
+  if (iscsh(shell())) {
     unsetenv("e");
   }
 }
 
-function quit(arg,  shell, i, n, projs)
+function quit(arg,  i, n, projs)
 {
-  shell = ARGV[arg++];
-  set_formats(shell);
   for (i in ecommands) {
     unalias(ecommands[i])
   }
@@ -694,7 +699,6 @@ function quit(arg,  shell, i, n, projs)
   unsetenv("EPROJECTS")
   unsetenv("EPROJECT")
   unsetenv("EHOME")
-  unsetenv("ESHELL")
   printf("\n");
 }
 
@@ -722,7 +726,6 @@ function write_eprojects(  projs, proj, i, j, k, n, names, values, vars)
     j=0;
     delete vars;
     for(i=0; i<n; i++) {
-      # create e#,name,proj_e#,proj_name
       j = add_evar(vars, j, projs[proj], i, names[i]);
     }
     setenv("EPROJECTS_" projs[proj], join(vars,","));
@@ -745,8 +748,7 @@ BEGIN {
   if (!ehome) {
     ehome = ENVIRON["HOME"] "/.e";
   }
-  eshell = ENVIRON["ESHELL"];
-  set_formats(eshell);
+  set_formats();
 
   get_current_project();
   emax = read_project(eproj, evalues, enames);
@@ -757,12 +759,13 @@ BEGIN {
     help(arg);
     exit(1);
   } else if(cmd == "reinit") {
-    #clear_current_project();
+    quit(arg)
     init(arg);
   } else if(cmd == "init") {
     init(arg);
   } else if(cmd == "quit") {
     quit(arg);
+    exit(1);
   } else if(cmd == "projects") {
     projects(arg);
     exit(1);
@@ -776,6 +779,8 @@ BEGIN {
     name(arg);
   } else if (cmd == "value") {
     value(arg);
+  } else if (cmd == "change") {
+    change(arg);
   } else if(cmd == "ls") {
     ls(arg);
     exit(1);

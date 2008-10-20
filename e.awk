@@ -271,7 +271,9 @@ function delete_evars(env,  i, names)
 
 function add_environment(entry)
 {
-  setenvalias("e" entry, evalues[entry]);
+  if (evalues[entry]) {
+    setenvalias("e" entry, evalues[entry]);
+  }
   add_env(eproj, entry, enames[entry], evalues[entry]);
 }
 

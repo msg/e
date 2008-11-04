@@ -642,8 +642,8 @@ function help(arg)
   echo("\tlist name,value,proj (-a=names,-A=names & proj_e<var>,-c=color)");
   echo(CY "ex " NO YL "from to" NO ":");
   echo("\texchange slots " YL "from " NO "and " YL "to" NO "");
-  echo(CY "ei" NO ":\n\t(re)initialize environment and alises");
-  echo(CY "eq" NO ":\n\tremove env and alises");
+  echo(CY "ei" NO ":\n\t(re)initialize environment and commands");
+  echo(CY "eq" NO ":\n\tremove env and commands");
   echo(CY "eh" NO ":\n\tprint this help message");
 }
 

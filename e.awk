@@ -407,7 +407,7 @@ function edit(arg,  proj)
   if (!proj) {
     proj = eproj;
   }
-  if (proj != eproj) {
+  if (proj == eproj) {
     clear_current_project();
   } else {
     delete_project_environment(proj);
@@ -759,7 +759,7 @@ BEGIN {
   cmd = ARGV[arg++];
   if (cmd == "help") {
     help(arg);
-    exit(1);
+    exit(0);
   } else if(cmd == "reinit") {
     quit(arg)
     init(arg);
@@ -767,14 +767,15 @@ BEGIN {
     init(arg);
   } else if(cmd == "quit") {
     quit(arg);
-    exit(1);
+    exit(0);
   } else if(cmd == "projects") {
     projects(arg);
-    exit(1);
+    exit(0);
   } else if (cmd == "rm") {
     rm(arg);
   } else if (cmd == "edit") {
     edit(arg);
+    exit(0);
   } else if(cmd == "store") {
     store(arg);
   } else if(cmd == "name") {
@@ -788,12 +789,12 @@ BEGIN {
     exit(1);
   } else if(cmd == "env") {
     env(arg);
-    exit(1);
+    exit(0);
   } else if(cmd == "exchange") {
     exchange(arg);
   } else {
     printf("invalid command '%s'\n", cmd);
-    exit(1);
+    exit(0);
   }
   write_eprojects();
 }

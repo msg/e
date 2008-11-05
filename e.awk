@@ -160,10 +160,10 @@ function isreserved(value)
   return "";
 }
 
-function get_current_project(  file)
+function get_current_project(useenv,  file)
 {
   eproj = ENVIRON["EPROJECT"];
-  if (!eproj) {
+  if (!eproj || !useenv) {
     file = ehome "/current-" hostname();
     if ((getline eproj < file) < 0) {
       eproj = "default"
@@ -647,7 +647,7 @@ function help(arg)
   echo(CY "eh" NO ":\n\tprint this help message");
 }
 
-function init(arg,  i, projs)
+function init(arg, useenv,  i, projs)
 {
   aliaseval("eh", "help");
   aliaseval("el", "ls");
@@ -662,6 +662,9 @@ function init(arg,  i, projs)
   aliaseval("ev", "value");
   aliaseval("ec", "change");
   aliaseval("ex", "exchange");
+
+  get_current_project(useenv);
+  emax = read_project(eproj, evalues, enames);
 
   setenv("EHOME", ehome);
   setenv("EPROJECT", eproj);
@@ -744,6 +747,9 @@ BEGIN {
   MG="\x1b[35;01m"
   CY="\x1b[36;01m"
 
+  DONT_USE_ENV = 0;
+  USE_ENV = 1;
+
   split("eh el em ei eq ep erp eep es en ev ex", ecommands) 
   
   ehome = ENVIRON["EHOME"];
@@ -752,7 +758,7 @@ BEGIN {
   }
   set_formats();
 
-  get_current_project();
+  get_current_project(USE_ENV);
   emax = read_project(eproj, evalues, enames);
 
   arg = 1;
@@ -762,9 +768,9 @@ BEGIN {
     exit(0);
   } else if(cmd == "reinit") {
     quit(arg)
-    init(arg);
+    init(arg, USE_ENV);
   } else if(cmd == "init") {
-    init(arg);
+    init(arg, DONT_USE_ENV);
   } else if(cmd == "quit") {
     quit(arg);
     exit(0);

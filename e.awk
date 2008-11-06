@@ -341,7 +341,7 @@ function clear_current_project(  i)
   add_project_environment(eproj);
 }
 
-function select_project(proj, temp, i, projfile)
+function select_project(proj, temp,  projfile)
 {
   clear_current_project();
 
@@ -618,7 +618,7 @@ function help(arg)
 {
   echo(CY "ep " YL "[-t] [project]" NO ":");
   echo("\tdisplay projects, if " YL "project " NO \
-  	" specified, set it to current");
+  	"specified, set it to current");
   echo("\t(-t select project only in current shell)");
   echo(CY "erp " NO  YL "project" NO ":");
   echo("\tremove " YL "project " NO "(if current, default selected)");

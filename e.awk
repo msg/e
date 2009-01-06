@@ -310,7 +310,7 @@ function delete_project_environment(proj,  names, values, n, i)
   if (ENVIRON["EPROJECTS_" proj]) {
     delete_evars(ENVIRON["EPROJECTS_" proj]);
   } else {
-    echo("EPROJECTS_" proj " does not exists, cannot delete project vars");
+    echo("EPROJECTS_" proj " does not exist, cannot delete project vars");
   }
 }
 
@@ -691,7 +691,6 @@ function init(arg, useenv,  i, projs)
   close(i);
 
   projects_list(projs)
-  setenv("EPROJECTS", join(projs, ","));
   for(i in projs) {
     add_project_environment(projs[i]);
   }
@@ -740,6 +739,7 @@ function add_evar(vars, i, proj, entry, name)
 function write_eprojects(  projs, proj, i, j, k, n, names, values, vars)
 {
   projects_list(projs);
+  setenv("EPROJECTS", join(projs, ","));
   for (proj in projs) {
     n = read_project(projs[proj], values, names);
     j=0;

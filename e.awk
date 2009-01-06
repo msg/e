@@ -73,6 +73,12 @@ function isidentifier(s)
   return s ~ "[A-Za-z_][A-Za-z0-9_]*";
 }
 
+function isdir(s)
+{
+  rc = system(sprintf("test -d '%s'",s));
+  return rc == 0
+}
+
 function set_formats()
 {
   eevalfmt = "eval \"%s\"";
@@ -119,7 +125,11 @@ function aliaseval(name, value)
 function alias(name, value)
 {
   #echo(sprintf("alias %s %s", name, value));
-  printf(ealiasfmt, name, value);
+  if (isdir(value)) {
+    printf(ealiasfmt, name, "cd " value);
+  } else {
+    printf(ealiasfmt, name, value);
+  }
 }
 
 function unalias(name)
@@ -341,7 +351,7 @@ function clear_current_project(  i)
   add_project_environment(eproj);
 }
 
-function select_project(proj, temp,  projfile)
+function select_project(proj, temp, i, projfile)
 {
   clear_current_project();
 
@@ -618,7 +628,7 @@ function help(arg)
 {
   echo(CY "ep " YL "[-t] [project]" NO ":");
   echo("\tdisplay projects, if " YL "project " NO \
-  	"specified, set it to current");
+  	" specified, set it to current");
   echo("\t(-t select project only in current shell)");
   echo(CY "erp " NO  YL "project" NO ":");
   echo("\tremove " YL "project " NO "(if current, default selected)");

@@ -73,10 +73,14 @@ function isidentifier(s)
   return s ~ "[A-Za-z_][A-Za-z0-9_]*";
 }
 
-function isdir(s)
+function isdir(s,  cmd, type)
 {
-  rc = system(sprintf("test -d '%s'",s));
-  return rc == 0
+  #rc = system(sprintf("test -d '%s'",s));
+  #return rc == 0
+  cmd = sprintf("stat -L -c '%%F' '%s' 2>/dev/null", s);
+  cmd | getline type;
+  close(cmd);
+  return type == "directory";
 }
 
 function set_formats()

@@ -58,14 +58,15 @@ function shell(  sh)
   return pipe("basename $SHELL");
 }
 
-function isbourne(shell)
-{
-  return shell == "zsh" || shell == "bash" || shell == "sh";
-}
-
 function iscsh(shell)
 {
   return shell == "csh";
+}
+
+function isbourne(shell)
+{
+  #return shell == "zsh" || shell == "bash" || shell == "sh";
+  return !iscsh(shell);
 }
 
 function isidentifier(s)
@@ -77,9 +78,7 @@ function isdir(s,  cmd, type)
 {
   #rc = system(sprintf("test -d '%s'",s));
   #return rc == 0
-  cmd = sprintf("stat -L -c '%%F' '%s' 2>/dev/null", s);
-  cmd | getline type;
-  close(cmd);
+  type = pipe(sprintf("stat -L -c '%%F' '%s' 2>/dev/null", s));
   return type == "directory";
 }
 
@@ -391,7 +390,7 @@ function projects(arg,   args, flags, proj, projnm, n)
   list_projects();
 }
 
-function rm(arg,  proj)
+function remove(arg,  proj)
 {
   if (arg >= ARGC) {
     echo("usage: erp project");
@@ -669,7 +668,7 @@ function init(arg, useenv,  i, projs)
   aliaseval("ei", "reinit");
   aliaseval("eq", "quit");
   aliaseval("ep", "projects");
-  aliaseval("erp", "rm");
+  aliaseval("erp", "remove");
   aliaseval("eep", "edit");
   aliaseval("es", "store");
   aliaseval("en", "name");
@@ -736,7 +735,7 @@ function add_evar(vars, i, proj, entry, name)
   return i;
 }
 
-function write_eprojects(  projs, proj, i, j, k, n, names, values, vars)
+function update_eprojects(  projs, proj, i, j, k, n, names, values, vars)
 {
   projects_list(projs);
   setenv("EPROJECTS", join(projs, ","));
@@ -791,8 +790,8 @@ BEGIN {
   } else if(cmd == "projects") {
     projects(arg);
     exit(0);
-  } else if (cmd == "rm") {
-    rm(arg);
+  } else if (cmd == "remove") {
+    remove(arg);
   } else if (cmd == "edit") {
     edit(arg);
     exit(0);
@@ -816,7 +815,7 @@ BEGIN {
     printf("invalid command '%s'\n", cmd);
     exit(0);
   }
-  write_eprojects();
+  update_eprojects();
 }
 
 # vim: sw=2:

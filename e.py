@@ -71,7 +71,6 @@ class BourneShell:
   def setenv_alias(self, name, value):
     self.setenv(name, value)
     self.alias(name, value)
-    #self.alias(name, self.eval_fmt % (value))
 
   def unsetenv_alias(self, name):
     self.unsetenv(name)
@@ -100,7 +99,7 @@ class Slot:
   def names(self):
     names = []
 
-    if len(self.value) == 0:
+    if self.value == '':
       return names
 
     names.append('%s_e%d' % (self.proj.name, self.slot))
@@ -108,6 +107,7 @@ class Slot:
       names.append('e%d' % self.slot)
 
     name = self.name
+
     if isreserved(name):
       echo('%s slot %d in project %s is reserved. no env/alias created.' %
 	      (name, slot, self.proj.name))
@@ -115,6 +115,7 @@ class Slot:
 
     if not name:
       return names
+
     names.append('%s_%s' % (self.proj.name, name))
 
     if isinit(name) and self.proj != self.proj.e.current:
@@ -124,10 +125,10 @@ class Slot:
     return names
 
   def add_environment(self):
-    value = self.value
-    if value:
-      for name in self.names():
-	self.proj.e.shell.setenv_alias(name, value)
+    if self.value == '':
+      return
+    for name in self.names():
+      self.proj.e.shell.setenv_alias(name, self.value)
 
   def delete_environment(self):
     for name in self.names():
@@ -143,10 +144,9 @@ class Project:
   def read(self):
     fname = self.e.home + '/' + self.name + '.project'
     if os.path.exists(fname):
-      lines = map(string.strip, open(fname).readlines())
+      data = map(lambda a: a.strip().split(','), open(fname).readlines())
       slot = 0
-      for line in lines:
-	value, name = line.split(',')
+      for value, name in lines:
 	self.slots.append(Slot(self, slot, value, name))
 	slot += 1
     else:
@@ -154,6 +154,7 @@ class Project:
 
   def write(self):
     f = open(self.e.home+'/'+self.name+'.project','w')
+    # remove empty slots at end of project
     while len(self.slots) > 1 and self.slots[-1].value == '':
       self.slots.pop(-1)
     for slot in self.slots:
@@ -162,8 +163,9 @@ class Project:
     
   def extend(self, sz):
     l = len(self.slots)
-    if l < sz:
-      self.slots.extend([Slot(self, l+i) for i in range(sz-l)])
+    if l > sz:
+      return
+    self.slots.extend([Slot(self, l+i) for i in range(sz-l)])
 
   def update_eproject_var(self):
     s = ''
@@ -182,8 +184,7 @@ class Project:
   def exec_slot(self, name):
     if not self == self.e.current:
       return
-    slot = self.find_slot(name)
-    if slot:
+    if self.find_slot(name):
       stdout('%s_%s;' % (self.name, name))
 
   def add_environment(self):
@@ -200,7 +201,7 @@ class Project:
       slot.delete_environment()
     self.e.shell.unsetenv('EPROJECTS_%s' % self.name)
 
-  def store(self, slot, name, value):
+  def slot_store(self, slot, name, value):
     if slot >= MAX_SLOTS:
       self.e.shell.echo('invalid slot %d, max is %d' % (slot, MAX_SLOTS))
       return
@@ -213,11 +214,11 @@ class Project:
     self.slots[slot].add_environment()
     self.write()
 
-  def slotname(self, slot, name):
-    self.store(slot, name, self.slots[slot].value)
+  def slot_name(self, slot, name):
+    self.slot_store(slot, name, self.slots[slot].value)
 
-  def slotvalue(self, slot, value):
-    self.store(slot, self.slots[slot].name, value)
+  def slot_value(self, slot, value):
+    self.slot_store(slot, self.slots[slot].name, value)
 
   def exchange(self, fromslot, toslot):
     l = len(self.slots)
@@ -287,19 +288,20 @@ class E:
     self.projects[name].write()
     self.update_eprojects()
 
-  def update_eprojects(self):
+  def project_names(self):
     names = self.projects.keys()
     names.sort()
-    self.shell.setenv('EPROJECTS', ','.join(names))
+    return names
+
+  def update_eprojects(self):
+    self.shell.setenv('EPROJECTS', ','.join(self.project_names()))
 
   def init(self):
     shell = self.shell
     for command in ecommands:
       shell.eval_alias(command, command)
 
-    names = self.projects.keys()
-    names.sort()
-    for name in names:
+    for name in self.project_names():
       project = self.projects[name]
       if project != self.current:
         project.add_environment()
@@ -307,15 +309,13 @@ class E:
 
     shell.setenv('EHOME', self.home)
     shell.setenv('EPROJECT', self.current.name)
-    shell.setenv('EPROJECTS', ','.join(names))
+    self.update_eprojects()
 
     if type(shell) == CShell:
       self.unsetenv('e')
     
   def ls(self):
-    names = self.projects.keys()
-    names.sort()
-    for name in names:
+    for name in self.project_names():
       project = self.projects[name]
       if project == self.current:
         leader = '>'
@@ -331,7 +331,7 @@ class E:
     shell.unsetenv('EPROJECTS')
     shell.unsetenv('EPROJECT')
     shell.unsetenv('EHOME')
-    for name in names:
+    for name in self.project_names():
       self.projects[name].delete_environment()
     for name in ecommands:
       shell.unalias(name)
@@ -370,18 +370,15 @@ class E:
     shell.echo(CY+"eh"+NO+":\n\tprint this help message")
 
   def el(self):
-    shell = self.shell
     name = (self.argv + [''])[0]
-    proj = self.projects.get(name,self.current)
-    proj.ls()
+    self.projects.get(name,self.current).ls()
     
   def em(self):
     flags = get_flags(sys.argv)
 
     if flags.get('a', 0) == 1:
-      names = self.projects.keys()
+      names = self.projects_names()
       names.remove(self.current.name)
-      names.sort()
       names.append(self.current.name)
     else:
       names = [ self.current.name ]
@@ -430,7 +427,6 @@ class E:
     self.projects[name].delete_environment()
     if self.projects[name] == self.current:
       self.set_current_project(self.projects['default'])
-
     del self.projects[name]
 
     fname = self.home + '/' + name
@@ -459,8 +455,7 @@ class E:
       name = sys.argv.pop(0)
     if len(self.argv):
       value = ' '.join(sys.argv)
-    value.strip()
-    self.current.store(slot, name, value)
+    self.current.slot_store(slot, name, value.strip())
 
   def en(self):
     if len(self.argv) < 1:
@@ -470,7 +465,7 @@ class E:
     name = ''
     if len(self.argv):
       name = self.argv.pop(0)
-    self.current.slotname(slot, name)
+    self.current.slot_name(slot, name)
 
   def ev(self):
     if len(self.argv) < 1:
@@ -479,8 +474,8 @@ class E:
     slot = int(self.argv.pop(0))
     value = ''
     if len(self.argv):
-      value = self.argv.pop(0)
-    self.current.slotvalue(slot, value)
+      value = ' '.join(self.argv)
+    self.current.slot_value(slot, value)
 
   def ec(self):
     if len(self.argv) < 1:
@@ -489,16 +484,16 @@ class E:
     name = self.argv.pop(0)
     value = ''
     if len(self.argv):
-      value = self.argv.pop(0)
+      value = ' '.join(self.argv)
     for slot in self.current.slots:
       if slot.name == name:
-        self.current.slotvalue(slot.slot, value)
+        self.current.slot_value(slot.slot, value)
 
   def ex(self):
     if len(self.argv) < 2:
       self.shell.echo('usage: ex # #')
       return
-    fromslot, toslot = self.argv[:2]
+    fromslot, toslot = map(int, self.argv[:2])
     self.current.exchange(fromslot, toslot)
 
   def process(self):

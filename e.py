@@ -11,6 +11,8 @@ BL="\x1b[34;01m"
 MG="\x1b[35;01m"
 CY="\x1b[36;01m"
 
+MAX_SLOTS = 100
+
 def hostname(): return os.popen('hostname -s').read().strip()
 
 def stdout(s): sys.stdout.write(s)
@@ -197,6 +199,12 @@ class Project:
     self.e.shell.unsetenv('EPROJECTS_%s' % self.name)
 
   def store(self, slot, name, value):
+    if slot >= MAX_SLOTS:
+      self.e.shell.echo('invalid slot %d, max is %d' % (slot, MAX_SLOTS))
+      return
+    if not isidentifier(name):
+      self.e.shell.echo('invalid name "%s", not an identifier' % name)
+      return
     self.extend(slot+1)
     self.slots[slot].delete_environment()
     self.slots[slot] = Slot(self, slot, value, name)
@@ -394,6 +402,9 @@ class E:
     flags = get_flags(sys.argv)
     if len(self.argv):
       name = self.argv.pop(0)
+      if not isidentifier(name):
+	self.shell.echo('invalid project name "%s", not an identifier' % name)
+	return
       if not self.projects.has_key(name):
         self.new_project(name)
       self.set_current_project(self.projects[name], flags.get('t', 0)) 

@@ -33,6 +33,7 @@ def get_flags(argv):
     if arg[0] == '-':
       for c in arg[1:]:
 	flags[c] = 1
+  return flags
 
 class BourneShell:
   eval_fmt = "eval \"%s\"";

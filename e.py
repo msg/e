@@ -146,7 +146,7 @@ class Project:
     if os.path.exists(fname):
       data = map(lambda a: a.strip().split(','), open(fname).readlines())
       slot = 0
-      for value, name in lines:
+      for value, name in data:
 	self.slots.append(Slot(self, slot, value, name))
 	slot += 1
     else:

@@ -149,10 +149,12 @@ class Project:
 	value, name = line.split(',')
 	self.slots.append(Slot(self, slot, value, name))
 	slot += 1
+    else:
+      self.slots.append(Slot(self, 0))
 
   def write(self):
     f = open(self.e.home+'/'+self.name+'.project','w')
-    while self.slots[-1].value == '':
+    while len(self.slots) > 1 and self.slots[-1].value == '':
       self.slots.pop(-1)
     for slot in self.slots:
       f.write('%s,%s\n' % (slot.value, slot.name))
@@ -232,7 +234,7 @@ class Project:
     for slot in self.slots:
       s = '%s%2d%s: ' % (CY, slot.slot, NO)
       if len(slot.value) > 60:
-        s += '%-56s %s...%s' % (slot.value[:56], RD, NO)
+        s += '%-56s %s...%s ' % (slot.value[:56], RD, NO)
       else:
         s += '%-60s ' % slot.value
       if slot.name:
@@ -282,6 +284,7 @@ class E:
     if os.path.exists(fname + '.oldproject'):
       os.rename(fname + '.oldproject', fname + '.project')
     self.projects[name] = Project(self, name)
+    self.projects[name].write()
     self.update_eprojects()
 
   def update_eprojects(self):
@@ -429,6 +432,9 @@ class E:
       self.set_current_project(self.projects['default'])
 
     del self.projects[name]
+
+    fname = self.home + '/' + name
+    os.rename(fname + '.project', fname + '.oldproject')
 
     self.update_eprojects()
     self.ls()

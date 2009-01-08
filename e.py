@@ -322,7 +322,7 @@ class E:
     shell.unsetenv('EHOME')
     for name in names:
       self.projects[name].delete_environment()
-    for name in reserved:
+    for name in ecommands:
       shell.unalias(name)
 
   def ei(self):

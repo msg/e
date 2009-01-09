@@ -154,7 +154,7 @@ class Project:
 
   def write(self):
     fname = '%s/%s.project' % (self.e.home, self.name)
-    f = open(fname)
+    f = open(fname, 'w')
     # remove empty slots at end of project
     while len(self.slots) > 1 and self.slots[-1].value == '':
       self.slots.pop(-1)

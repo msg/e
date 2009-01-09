@@ -205,7 +205,7 @@ class Project:
     if slot >= MAX_SLOTS:
       self.e.shell.echo('invalid slot %d, max is %d' % (slot, MAX_SLOTS))
       return
-    if not isidentifier(name):
+    if name and not isidentifier(name):
       self.e.shell.echo('invalid name "%s", not an identifier' % name)
       return
     self.extend(slot+1)
@@ -267,7 +267,11 @@ class E:
       self.projects[proj] = Project(self, proj)
     
   def get_current_project(self):
-    s = open(self.home + '/current-' + hostname()).read().strip()
+    fname = '%s/current-%s' % (self.home, hostname())
+    if os.path.exists(fname)
+      s = open(fname).read().strip()
+    else:
+      s = 'default'
     return self.projects.get(s, Project(self, 'default'))
 
   def set_current_project(self, project, onlylocal=False):

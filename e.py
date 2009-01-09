@@ -30,8 +30,8 @@ def isreserved(s): return s in ecommands + [ 'e%d' % i for i in range(100) ]
 
 def get_flags(argv):
   flags = {}
-  while len(sys.argv) and sys.argv[0] == '-':
-    arg = sys.argv.pop(0)
+  while len(argv) and argv[0][0] == '-':
+    arg = argv.pop(0)
     if arg[0] == '-':
       for c in arg[1:]:
 	flags[c] = 1
@@ -142,7 +142,7 @@ class Project:
     self.read()
 
   def read(self):
-    fname = self.e.home + '/' + self.name + '.project'
+    fname = '%s/%s.project' % (self.e.home, self.name)
     if os.path.exists(fname):
       data = map(lambda a: a.strip().split(','), open(fname).readlines())
       slot = 0
@@ -153,7 +153,8 @@ class Project:
       self.slots.append(Slot(self, 0))
 
   def write(self):
-    f = open(self.e.home+'/'+self.name+'.project','w')
+    fname = '%s/%s.project' % (self.e.home, self.name)
+    f = open(fname)
     # remove empty slots at end of project
     while len(self.slots) > 1 and self.slots[-1].value == '':
       self.slots.pop(-1)
@@ -276,7 +277,8 @@ class E:
 
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
-      open(self.home + '/current-' + hostname(),'w').write(project.name+'\n')
+      fname = '%s/current-%s' % (self.home, hostname())
+      open(fname).write(project.name+'\n')
     save = self.current
     save.delete_environment()
     self.current = project
@@ -285,7 +287,7 @@ class E:
     self.shell.setenv('EPROJECT', self.current.name)
 
   def new_project(self, name):
-    fname = self.home + '/' + name
+    fname = '%s/%s' % (self.home, name)
     if os.path.exists(fname + '.oldproject'):
       os.rename(fname + '.oldproject', fname + '.project')
     self.projects[name] = Project(self, name)

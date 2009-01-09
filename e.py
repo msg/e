@@ -278,7 +278,7 @@ class E:
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
       fname = '%s/current-%s' % (self.home, hostname())
-      open(fname).write(project.name+'\n')
+      open(fname, 'w').write(project.name+'\n')
     save = self.current
     save.delete_environment()
     self.current = project

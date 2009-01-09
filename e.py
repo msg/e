@@ -268,7 +268,7 @@ class E:
     
   def get_current_project(self):
     fname = '%s/current-%s' % (self.home, hostname())
-    if os.path.exists(fname)
+    if os.path.exists(fname):
       s = open(fname).read().strip()
     else:
       s = 'default'

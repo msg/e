@@ -228,8 +228,12 @@ class Project:
 	  (fromslot, toslot, l))
       return
     slots = self.slots
-    toname, tovalue = slots[toslot].name, slots[toslot].value
-    self.slot_store(toslot, slots[fromslot].name, slots[fromslot].value)
+    toname = tovalue = fromname = fromvalue = ''
+    if toslot < l:
+      toname, tovalue = slots[toslot].name, slots[toslot].value
+    if fromslot < l:
+      fromname, fromvalue = slots[fromslot].name, slots[fromslot].value
+    self.slot_store(toslot, fromname, fromvalue)
     self.slot_store(fromslot, toname, tovalue)
     self.write()
     

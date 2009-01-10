@@ -228,7 +228,10 @@ class Project:
 	  (fromslot, toslot, l))
       return
     slots = self.slots
-    slots[fromslot],slots[toslot] = slots[toslot],slots[fromslot]
+    toname, tovalue = slots[toslot].name, slots[toslot].value
+    self.slot_store(toslot, slots[fromslot].name, slots[fromslot].value)
+    self.slot_store(fromslot, toname, tovalue)
+    self.write()
     
   def ls(self):
     shell = self.e.shell

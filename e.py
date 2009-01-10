@@ -383,7 +383,7 @@ class E:
     flags = get_flags(sys.argv)
 
     if flags.get('a', 0) == 1:
-      names = self.projects_names()
+      names = self.project_names()
       names.remove(self.current.name)
       names.append(self.current.name)
     else:

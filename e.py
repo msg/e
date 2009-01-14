@@ -120,6 +120,10 @@ class Slot:
 
     if isinit(name) and self.proj != self.proj.e.current:
       return names
+
+    if self.proj.e.vars[name] != self.proj.name:
+      return names
+
     names.append(name)
 
     return names
@@ -168,21 +172,13 @@ class Project:
       return
     self.slots.extend([Slot(self, l+i) for i in range(sz-l)])
 
-  def update_eproject_var(self):
-    s = ''
-    for slot in self.slots:
-      newnames = slot.names()
-      if len(newnames):
-        s += ',' + ','.join(newnames)
-    self.e.shell.setenv('EPROJECTS_%s' % (self.name), s[1:])
-
   def find_slot(self, name):
     for slot in self.slots:
       if slot.name == name:
         return slot
     return None
 
-  def exec_slot(self, name):
+  def exec_current(self, name):
     if not self == self.e.current:
       return
     if self.find_slot(name):
@@ -191,16 +187,12 @@ class Project:
   def add_environment(self):
     for slot in self.slots:
       slot.add_environment()
-    self.exec_slot('init')
-    self.update_eproject_var()
+    self.exec_current('init')
 
   def delete_environment(self):
-    self.exec_slot('deinit')
+    self.exec_current('deinit')
     for slot in self.slots:
-      if self.e.current == self and slot.name == 'deinit':
-        init = True
       slot.delete_environment()
-    self.e.shell.unsetenv('EPROJECTS_%s' % self.name)
 
   def slot_store(self, slot, name, value):
     if slot >= MAX_SLOTS:
@@ -258,8 +250,10 @@ class E:
     self.argv = argv
     self.home = os.environ.get('EHOME',os.path.expanduser('~/.e'))
     self.setup_shell()
+    self.vars = {}
     self.read_projects()
     self.current = self.get_current_project()
+    self.update_vars()
 
   def setup_shell(self):
     shell = os.path.basename(os.environ['SHELL'])
@@ -275,39 +269,41 @@ class E:
       self.projects[proj] = Project(self, proj)
     
   def get_current_project(self):
-    fname = '%s/current-%s' % (self.home, hostname())
-    if os.path.exists(fname):
-      s = open(fname).read().strip()
-    else:
-      s = 'default'
+    s = open(self.home + '/current-' + hostname()).read().strip()
     return self.projects.get(s, Project(self, 'default'))
 
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
-      fname = '%s/current-%s' % (self.home, hostname())
-      open(fname, 'w').write(project.name+'\n')
+      open(self.home + '/current-' + hostname(),'w').write(project.name+'\n')
     save = self.current
     save.delete_environment()
     self.current = project
+    self.update_vars()
     save.add_environment()
     self.current.add_environment()
     self.shell.setenv('EPROJECT', self.current.name)
 
   def new_project(self, name):
-    fname = '%s/%s' % (self.home, name)
+    fname = self.home + '/' + name
     if os.path.exists(fname + '.oldproject'):
       os.rename(fname + '.oldproject', fname + '.project')
     self.projects[name] = Project(self, name)
     self.projects[name].write()
-    self.update_eprojects()
 
   def project_names(self):
     names = self.projects.keys()
     names.sort()
     return names
 
-  def update_eprojects(self):
-    self.shell.setenv('EPROJECTS', ','.join(self.project_names()))
+  def update_vars(self):
+    self.vars = {}
+    for name in self.project_names():
+      for slot in self.projects[name].slots:
+        if slot.name:
+	  self.vars[slot.name] = name
+    for slot in self.current.slots:
+      if slot.name:
+        self.vars[slot.name] = self.current.name
 
   def init(self):
     shell = self.shell
@@ -322,7 +318,6 @@ class E:
 
     shell.setenv('EHOME', self.home)
     shell.setenv('EPROJECT', self.current.name)
-    self.update_eprojects()
 
     if type(shell) == CShell:
       self.unsetenv('e')
@@ -341,7 +336,6 @@ class E:
 
   def eq(self):
     shell = self.shell
-    shell.unsetenv('EPROJECTS')
     shell.unsetenv('EPROJECT')
     shell.unsetenv('EHOME')
     for name in self.project_names():
@@ -445,7 +439,6 @@ class E:
     fname = self.home + '/' + name
     os.rename(fname + '.project', fname + '.oldproject')
 
-    self.update_eprojects()
     self.ls()
 
   def eep(self):

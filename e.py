@@ -121,7 +121,8 @@ class Slot:
     if isinit(name) and self.proj != self.proj.e.current:
       return names
 
-    if self.proj.e.vars[name] != self.proj.name:
+    vars = self.proj.e.vars
+    if vars.has_key(name) and vars[name] != self.proj.name:
       return names
 
     names.append(name)

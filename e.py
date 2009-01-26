@@ -290,6 +290,7 @@ class E:
       os.rename(fname + '.oldproject', fname + '.project')
     self.projects[name] = Project(self, name)
     self.projects[name].write()
+    return self.projects[name]
 
   def project_names(self):
     names = self.projects.keys()
@@ -311,6 +312,7 @@ class E:
     for command in ecommands:
       shell.eval_alias(command, command)
 
+    # add projects in alphabetical order, then the current project
     for name in self.project_names():
       project = self.projects[name]
       if project != self.current:
@@ -327,11 +329,9 @@ class E:
     for name in self.project_names():
       project = self.projects[name]
       if project == self.current:
-        leader = '>'
-	color = YL
+        leader, color = '>', YL
       else:
-        leader = ' '
-	color = CY
+        leader, color = ' ', CY
       s = leader + '%2d ' + color + '%-20s ' + NO
       self.shell.echo(s % (len(project.slots), name))
 
@@ -349,33 +349,37 @@ class E:
 
   def eh(self):
     shell = self.shell
-    shell.echo(CY+"ep "+YL+"[project]"+NO+":");
-    shell.echo("\tdisplay projects, if "+YL+"project "+NO+
-	  " specified, set it to current")
-    shell.echo(CY+"erp "+NO+YL+"project"+NO+":")
-    shell.echo("\tremove "+YL+"project "+NO+"(if current, default selected)")
-    shell.echo(CY+"eep "+NO+YL+"[project]"+NO+":")
-    shell.echo("\tedit "+YL+"project "+NO+"and reinit (default current)")
-    shell.echo(CY+"ev "+NO+YL+"0-# [value]"+NO+":")
-    shell.echo("\tstore "+YL+"value "+NO+"to slot "+YL+"0-# "+NO+
-	  "(empty value clears)")
-    shell.echo(CY+"en "+NO+YL+"0-# [name]"+NO+":")
-    shell.echo("\tmake env variable "+YL+"name "+NO+"point to slot "+YL+"#"+NO+
-	  " (empty name clears)")
-    shell.echo(CY+"es "+NO+YL+"0-# [name] [value]"+NO+":")
-    shell.echo("\tmake slot "+YL+"# "+NO+"with "+YL+"name "+NO+"and "+
-	  YL+"value "+NO+"(empty name & value clears)")
-    shell.echo(CY+"el "+NO+YL+"[project]"+NO+":")
-    shell.echo("\tlist all slots titles in "+YL+"project "+NO+
-    	"(default current)")
-    shell.echo(CY+"em "+NO+YL+"[-[Aac]]"+NO+":")
-    shell.echo("\tlist name,value,proj "+
-    	"(-a=all projs,-A=names & <proj>_<var>,-c=color)")
-    shell.echo(CY+"ex "+NO+YL+"from to"+NO+":")
-    shell.echo("\texchange slots "+YL+"from "+NO+"and "+YL+"to"+NO)
-    shell.echo(CY+"ei"+NO+":\n\t(re)initialize environment and alises")
-    shell.echo(CY+"eq"+NO+":\n\tremove env and alises")
-    shell.echo(CY+"eh"+NO+":\n\tprint this help message")
+    lines = [
+      CY+"ep "+YL+"[project]"+NO+":",
+      "\tdisplay projects, if "+YL+"project "+NO+
+	  " specified, set it to current",
+      CY+"erp "+NO+YL+"project"+NO+":",
+      "\tremove "+YL+"project "+NO+"(if current, default selected)",
+      CY+"eep "+NO+YL+"[project]"+NO+":",
+      "\tedit "+YL+"project "+NO+"and reinit (default current)",
+      CY+"ev "+NO+YL+"0-# [value]"+NO+":",
+      "\tstore "+YL+"value "+NO+"to slot "+YL+"0-# "+NO+
+	  "(empty value clears)",
+      CY+"en "+NO+YL+"0-# [name]"+NO+":",
+      "\tmake env variable "+YL+"name "+NO+"point to slot "+YL+"#"+NO+
+	  " (empty name clears)",
+      CY+"es "+NO+YL+"0-# [name] [value]"+NO+":",
+      "\tmake slot "+YL+"# "+NO+"with "+YL+"name "+NO+"and "+
+	  YL+"value "+NO+"(empty name & value clears)",
+      CY+"el "+NO+YL+"[project]"+NO+":",
+      "\tlist all slots titles in "+YL+"project "+NO+
+    	"(default current)",
+      CY+"em "+NO+YL+"[-[Aac]]"+NO+":",
+      "\tlist name,value,proj "+
+    	"(-a=all projs,-A=names & <proj>_<var>,-c=color)",
+      CY+"ex "+NO+YL+"from to"+NO+":",
+      "\texchange slots "+YL+"from "+NO+"and "+YL+"to"+NO,
+      CY+"ei"+NO+":\n\t(re)initialize environment and alises",
+      CY+"eq"+NO+":\n\tremove env and alises",
+      CY+"eh"+NO+":\n\tprint this help message",
+    ]
+    for line in lines:
+      shell.echo(line)
 
   def el(self):
     name = (self.argv + [''])[0]
@@ -413,9 +417,8 @@ class E:
       if not isidentifier(name):
 	self.shell.echo('invalid project name "%s", not an identifier' % name)
 	return
-      if not self.projects.has_key(name):
-        self.new_project(name)
-      self.set_current_project(self.projects[name], flags.get('t', 0)) 
+      proj = self.projects.get(name,self.new_project(name))
+      self.set_current_project(proj, flags.get('t', 0)) 
     self.ls()
 
   def erp(self):

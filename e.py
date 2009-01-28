@@ -250,6 +250,8 @@ class E:
   def __init__(self, argv):
     self.argv = argv
     self.home = os.environ.get('EHOME',os.path.expanduser('~/.e'))
+    if not os.path.exists(self.home):
+      os.mkdir(self.home)
     self.setup_shell()
     self.vars = {}
     self.read_projects()
@@ -270,7 +272,11 @@ class E:
       self.projects[proj] = Project(self, proj)
     
   def get_current_project(self):
-    s = open(self.home + '/current-' + hostname()).read().strip()
+    cfile = '%s/current-%s' % (self.home, hostname())
+    if os.path.exists(cfile)
+      s = open(cfile).read().strip()
+    else:
+      s = 'default'
     return self.projects.get(s, Project(self, 'default'))
 
   def set_current_project(self, project, onlylocal=False):

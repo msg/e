@@ -372,6 +372,9 @@ class E:
       CY+"es "+NO+YL+"0-# [name] [value]"+NO+":",
       "\tmake slot "+YL+"# "+NO+"with "+YL+"name "+NO+"and "+
 	  YL+"value "+NO+"(empty name & value clears)",
+      CY+"ec "+NO+YL+"name [value]"+NO+":",
+      "\tmake slot with "+YL+"name "+NO+"and "+
+	  YL+"value "+NO+"(empty value clears)",
       CY+"el "+NO+YL+"[project]"+NO+":",
       "\tlist all slots titles in "+YL+"project "+NO+
     	"(default current)",

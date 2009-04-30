@@ -102,31 +102,35 @@ class Slot:
     if self.value == '':
       return names
 
+    # add <project>_e# to list
     names.append('%s_e%d' % (self.proj.name, self.slot))
     if self.proj == self.proj.e.current:
       names.append('e%d' % self.slot)
 
     name = self.name
 
+    # valid name not being an e command
     if isreserved(name):
       echo('%s slot %d in project %s is reserved. no env/alias created.' %
 	      (name, slot, self.proj.name))
       return names
 
+    # if slot doesn't have a name, we are done.
     if not name:
       return names
 
     names.append('%s_%s' % (self.proj.name, name))
 
+    # init type names are only add if project is current
     if isinit(name) and self.proj != self.proj.e.current:
       return names
 
+    # if name is not only slot with name, we are done.
     vars = self.proj.e.vars
     if vars.has_key(name) and vars[name] != self.proj.name:
       return names
 
     names.append(name)
-
     return names
 
   def add_environment(self):
@@ -358,9 +362,10 @@ class E:
   def eh(self):
     shell = self.shell
     lines = [
-      CY+"ep "+YL+"[project]"+NO+":",
+      CY+"ep "+YL+"[-[tc]] [project]"+NO+":",
       "\tdisplay projects, if "+YL+"project "+NO+
-	  " specified, set it to current",
+	  "specified, set it to current",
+      "\t(-c creates new, -t temporary current shell only)",
       CY+"erp "+NO+YL+"project"+NO+":",
       "\tremove "+YL+"project "+NO+"(if current, default selected)",
       CY+"eep "+NO+YL+"[project]"+NO+":",
@@ -428,9 +433,18 @@ class E:
       if not isidentifier(name):
 	self.shell.echo('invalid project name "%s", not an identifier' % name)
 	return
-      proj = self.projects.get(name,self.new_project(name))
-      self.set_current_project(proj, flags.get('t', 0)) 
-    self.ls()
+
+      if flags.get('c', 0):
+        proj = self.new_project(name)
+      else:
+        proj = self.projects.get(name, None)
+
+      if proj:
+        self.set_current_project(proj, flags.get('t', 0)) 
+        self.ls()
+      else:
+        self.shell.echo('no project named "%s", use "ep -c %s" to create' %
+		(name, name))
 
   def erp(self):
     if len(self.argv) == 0:

@@ -440,11 +440,13 @@ class E:
         proj = self.projects.get(name, None)
 
       if proj:
-        self.set_current_project(proj, flags.get('t', 0)) 
-        self.ls()
+	self.set_current_project(proj, flags.get('t', 0)) 
+	self.ls()
       else:
         self.shell.echo('no project named "%s", use "ep -c %s" to create' %
 		(name, name))
+    else:
+      self.ls()
 
   def erp(self):
     if len(self.argv) == 0:

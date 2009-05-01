@@ -207,16 +207,20 @@ class Project:
       self.e.shell.echo('invalid name "%s", not an identifier' % name)
       return
     self.extend(slot+1)
+    if name == None:
+      name = self.slots[slot].name
+    if value == None:
+      value = self.slots[slot].value
     self.slots[slot].delete_environment()
     self.slots[slot] = Slot(self, slot, value, name)
     self.slots[slot].add_environment()
     self.write()
 
   def slot_name(self, slot, name):
-    self.slot_store(slot, name, self.slots[slot].value)
+    self.slot_store(slot, name, None)
 
   def slot_value(self, slot, value):
-    self.slot_store(slot, self.slots[slot].name, value)
+    self.slot_store(slot, None, value)
 
   def exchange(self, fromslot, toslot):
     l = len(self.slots)

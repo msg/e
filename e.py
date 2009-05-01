@@ -283,7 +283,10 @@ class E:
       s = open(cfile).read().strip()
     else:
       s = 'default'
-    return self.projects.get(s, Project(self, 'default'))
+    proj = self.projects.get(s, None)
+    if proj == None:
+      proj = self.new_project(s)
+    return proj
 
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
@@ -324,6 +327,7 @@ class E:
     for command in ecommands:
       shell.eval_alias(command, command)
 
+    self.current = self.get_current_project()
     # add projects in alphabetical order, then the current project
     for name in self.project_names():
       project = self.projects[name]

@@ -111,8 +111,9 @@ class Slot:
 
     # valid name not being an e command
     if isreserved(name):
-      echo('%s slot %d in project %s is reserved. no env/alias created.' %
-	      (name, slot, self.proj.name))
+      self.proj.e.shell.echo(
+          '%s slot %d in project %s is reserved. no env/alias created.' %
+	  (name, slot, self.proj.name))
       return names
 
     # if slot doesn't have a name, we are done.

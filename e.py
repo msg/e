@@ -126,11 +126,6 @@ class Slot:
     if isinit(name) and self.proj != self.proj.e.current:
       return names
 
-    # if name is not only slot with name, we are done.
-    vars = self.proj.e.vars
-    if vars.has_key(name) and vars[name] != self.proj.name:
-      return names
-
     names.append(name)
     return names
 

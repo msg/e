@@ -195,6 +195,13 @@ class Project:
     for slot in self.slots:
       slot.delete_environment()
 
+  def clear_name(self, name):
+    for slot in range(len(self.slots)):
+      if self.slots[slot].name == name:
+        self.slots[slot].delete_environment()
+        self.slots[slot] = Slot(self, slot, self.slots[slot].value, '')
+	self.slots[slot].add_environment()
+
   def slot_store(self, slot, name, value):
     if slot >= MAX_SLOTS:
       self.e.shell.echo('invalid slot %d, max is %d' % (slot, MAX_SLOTS))
@@ -205,6 +212,8 @@ class Project:
     self.extend(slot+1)
     if name == None:
       name = self.slots[slot].name
+    else: # remove duplicate name if it exists
+      self.clear_name(name)
     if value == None:
       value = self.slots[slot].value
     self.slots[slot].delete_environment()

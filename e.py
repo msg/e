@@ -149,7 +149,7 @@ class Project:
   def read(self):
     fname = '%s/%s.project' % (self.e.home, self.name)
     if os.path.exists(fname):
-      data = map(lambda a: a.strip().split(','), open(fname).readlines())
+      data = map(lambda a: a.strip().rsplit(',',1), open(fname).readlines())
       slot = 0
       for value, name in data:
 	self.slots.append(Slot(self, slot, value, name))

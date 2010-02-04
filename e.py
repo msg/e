@@ -42,6 +42,7 @@ class BourneShell:
   setenv_fmt = "export %s='%s'\n";
   unsetenv_fmt = "unset %s\n";
   alias_fmt = "%s() {\n  %s \n}\n";
+  projects_dir = "sh"
 
   def __init__(self, e):
     self.e = e
@@ -81,6 +82,7 @@ class CShell(BourneShell):
   unsetenv_fmt = "unsetenv %s;"
   alias_fmt = "alias %s '%s';"
   unalias_fmt = 'unalias %s;'
+  projects_dir = "csh"
 
   def unalias(self, name):
     stdout(self.unalias_fmt % name)
@@ -147,7 +149,7 @@ class Project:
     self.read()
 
   def read(self):
-    fname = '%s/%s.project' % (self.e.home, self.name)
+    fname = '%s/%s.project' % (self.e.projects_dir, self.name)
     if os.path.exists(fname):
       data = map(lambda a: a.strip().rsplit(',',1), open(fname).readlines())
       slot = 0
@@ -158,7 +160,7 @@ class Project:
       self.slots.append(Slot(self, 0))
 
   def write(self):
-    fname = '%s/%s.project' % (self.e.home, self.name)
+    fname = '%s/%s.project' % (self.e.projects_dir, self.name)
     f = open(fname, 'w')
     # remove empty slots at end of project
     while len(self.slots) > 1 and self.slots[-1].value == '':
@@ -266,6 +268,9 @@ class E:
     if not os.path.exists(self.home):
       os.mkdir(self.home)
     self.setup_shell()
+    self.projects_dir = self.home + '/' + self.shell.projects_dir
+    if not os.path.exists(self.projects_dir):
+      os.mkdir(self.projects_dir)
     self.vars = {}
     self.read_projects()
     self.current = self.get_current_project()
@@ -280,12 +285,12 @@ class E:
 
   def read_projects(self):
     self.projects = {}
-    for pname in glob.glob1(self.home, '*.project'):
+    for pname in glob.glob1(self.projects_dir, '*.project'):
       proj = os.path.basename(pname).replace('.project','')
       self.projects[proj] = Project(self, proj)
     
   def get_current_project(self):
-    cfile = '%s/current-%s' % (self.home, hostname())
+    cfile = '%s/current-%s' % (self.projects_dir, hostname())
     if os.environ.has_key('EPROJECT'):
       s = os.environ['EPROJECT']
     elif os.path.exists(cfile):
@@ -299,7 +304,7 @@ class E:
 
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
-      open(self.home + '/current-' + hostname(),'w').write(project.name+'\n')
+      open(self.projects_dir + '/current-' + hostname(),'w').write(project.name+'\n')
     save = self.current
     save.delete_environment()
     self.current = project
@@ -309,7 +314,7 @@ class E:
     self.shell.setenv('EPROJECT', self.current.name)
 
   def new_project(self, name):
-    fname = self.home + '/' + name
+    fname = self.projects_dir + '/' + name
     if os.path.exists(fname + '.oldproject'):
       os.rename(fname + '.oldproject', fname + '.project')
     self.projects[name] = Project(self, name)
@@ -480,7 +485,7 @@ class E:
       self.set_current_project(self.projects['default'])
     del self.projects[name]
 
-    fname = self.home + '/' + name
+    fname = self.projects_dir + '/' + name
     os.rename(fname + '.project', fname + '.oldproject')
 
     self.ls()
@@ -492,7 +497,7 @@ class E:
       if not self.projects.has_key(name):
         self.projects[name] = Project(self, name)
     self.projects[name].delete_environment()
-    fname = self.home + '/' + name + '.project'
+    fname = self.projects_dir + '/' + name + '.project'
     stdout('%s %s;ei\n' % (os.environ['EDITOR'], fname))
 
   def es(self):

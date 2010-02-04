@@ -77,6 +77,9 @@ class BourneShell:
     self.unsetenv(name)
     self.unalias(name)
 
+  def exec_alias(self, name):
+    stdout(name + ';')
+    
 class CShell(BourneShell):
   setenv_fmt = "setenv %s \"%s\";"
   unsetenv_fmt = "unsetenv %s;"
@@ -88,9 +91,12 @@ class CShell(BourneShell):
     stdout(self.unalias_fmt % name)
 
   def eval_alias(self, name, value):
-    stdout('set e(eval \\"\\`%s/e.py %s %s \\!\\*\\`\\";alias %s "$e";' %
-    	(e.home, value, name))
+    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";' %
+    	(self.e.home, value, name))
 
+  def exec_alias(self, name):
+    stdout('eval "$%s";' % (name))
+    
 class Slot:
   def __init__(self, proj, slot, value='', name=''):
     self.proj = proj
@@ -185,7 +191,7 @@ class Project:
     if not self == self.e.current:
       return
     if self.find_slot(name):
-      stdout('%s_%s;' % (self.name, name))
+      self.e.shell.exec_alias('%s_%s' % (self.name, name))
 
   def add_environment(self):
     for slot in self.slots:

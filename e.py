@@ -156,8 +156,15 @@ class Project:
 
   def read(self):
     fname = '%s/%s.project' % (self.e.projects_dir, self.name)
+    def splitvn(s):
+      s = s.strip()
+      c = s.rfind(',')
+      if c > -1:
+        return s[:c], s[c+1:]
+      else:
+        return s, ''
     if os.path.exists(fname):
-      data = map(lambda a: a.strip().rsplit(',',1), open(fname).readlines())
+      data = map(splitvn, open(fname).readlines())
       slot = 0
       for value, name in data:
 	self.slots.append(Slot(self, slot, value, name))

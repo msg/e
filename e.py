@@ -232,8 +232,11 @@ class Project:
     if value == None:
       value = self.slots[slot].value
     self.slots[slot].delete_environment()
-    self.slots[slot] = Slot(self, slot, value, name)
-    self.slots[slot].add_environment()
+    if value != '':
+      self.slots[slot] = Slot(self, slot, value, name)
+      self.slots[slot].add_environment()
+    else:
+      del self.slots[slot]
     self.write()
 
   def slot_name(self, slot, name):

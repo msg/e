@@ -307,15 +307,14 @@ class E:
     
   def get_current_project(self):
     cfile = '%s/current-%s' % (self.projects_dir, hostname())
-    if os.environ.has_key('EPROJECT'):
-      s = os.environ['EPROJECT']
-    elif os.path.exists(cfile):
-      s = open(cfile).read().strip()
+    name = os.environ.get('EPROJECT')
+    if name == None and os.path.exists(cfile):
+      name = open(cfile).read().strip()
     else:
-      s = 'default'
-    proj = self.projects.get(s, None)
+      name = 'default'
+    proj = self.projects.get(name, None)
     if proj == None:
-      proj = self.new_project(s)
+      proj = self.new_project(name)
     return proj
 
   def set_current_project(self, project, onlylocal=False):
@@ -338,9 +337,7 @@ class E:
     return self.projects[name]
 
   def project_names(self):
-    names = self.projects.keys()
-    names.sort()
-    return names
+    return sorted(self.projects.keys())
 
   def update_vars(self):
     self.vars = {}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import glob, os, re, string, sys
+import glob, os, re, sys
 
 NO="\x1b[0;0m"
 BR="\x1b[0;01m"
@@ -121,7 +121,7 @@ class Slot:
     if isreserved(name):
       self.proj.e.shell.echo(
           '%s slot %d in project %s is reserved. no env/alias created.' %
-          (name, slot, self.proj.name))
+          (name, self.slot, self.proj.name))
       return names
 
     # if slot doesn't have a name, we are done.
@@ -366,7 +366,7 @@ class E:
     shell.setenv('EPROJECT', self.current.name)
 
     if type(shell) == CShell:
-      self.unsetenv('e')
+      shell.unsetenv('e')
     
   def ls(self):
     for name in self.project_names():

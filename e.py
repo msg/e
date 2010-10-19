@@ -2,14 +2,14 @@
 
 import glob, os, re, sys
 
-NO="\x1b[0;0m"
-BR="\x1b[0;01m"
-RD="\x1b[31;01m"
-GR="\x1b[32;01m"
-YL="\x1b[33;01m"
-BL="\x1b[34;01m"
-MG="\x1b[35;01m"
-CY="\x1b[36;01m"
+NO = "\x1b[0;0m"
+BR = "\x1b[0;01m"
+RD = "\x1b[31;01m"
+GR = "\x1b[32;01m"
+YL = "\x1b[33;01m"
+BL = "\x1b[34;01m"
+MG = "\x1b[35;01m"
+CY = "\x1b[36;01m"
 
 MAX_SLOTS = 100
 
@@ -25,8 +25,8 @@ def isinit(name): return name == 'init' or name == 'deinit'
 
 def isidentifier(id): return re.match('^[A-Za-z_][A-Za-z0-9_]*$', id)
 
-ecommands = 'eh el em ei eq ep erp eep es en ev ec ex'.split()
-def isreserved(s): return s in ecommands + [ 'e%d' % i for i in range(100) ]
+ECOMMANDS = 'eh el em ei eq ep erp eep es en ev ec ex'.split()
+def isreserved(s): return s in ECOMMANDS + [ 'e%d' % i for i in range(100) ]
 
 def get_flags(argv):
   flags = {}
@@ -38,10 +38,10 @@ def get_flags(argv):
   return flags
 
 class BourneShell:
-  eval_fmt = "eval \"%s\"";
-  setenv_fmt = "export %s='%s'\n";
-  unsetenv_fmt = "unset %s\n";
-  alias_fmt = "%s() {\n  %s \n}\n";
+  eval_fmt = "eval \"%s\""
+  setenv_fmt = "export %s='%s'\n"
+  unsetenv_fmt = "unset %s\n"
+  alias_fmt = "%s() {\n  %s \n}\n"
   projects_dir = "sh"
 
   def __init__(self, e):
@@ -280,30 +280,31 @@ class Project:
 class E:
   def __init__(self, argv):
     self.argv = argv
-    self.home = os.environ.get('EHOME',os.path.expanduser('~/.e'))
+    self.home = os.environ.get('EHOME', os.path.expanduser('~/.e'))
     if not os.path.exists(self.home):
       os.mkdir(self.home)
-    self.setup_shell()
+    self.shell = self.setup_shell()
     self.projects_dir = self.home + '/' + self.shell.projects_dir
     if not os.path.exists(self.projects_dir):
       os.mkdir(self.projects_dir)
     self.vars = {}
-    self.read_projects()
+    self.projects = self.read_projects()
     self.current = self.get_current_project()
     self.update_vars()
 
   def setup_shell(self):
     shell = os.path.basename(os.environ['SHELL'])
-    if isbourne(shell):
-      self.shell = BourneShell(self)
-    elif iscsh(shell):
-      self.shell = CShell(self)
+    if iscsh(shell):
+      return CShell(self)
+    else:
+      return BourneShell(self)
 
   def read_projects(self):
-    self.projects = {}
+    projects = {}
     for pname in glob.glob1(self.projects_dir, '*.project'):
       proj = os.path.basename(pname).replace('.project','')
-      self.projects[proj] = Project(self, proj)
+      projects[proj] = Project(self, proj)
+    return projects
     
   def get_current_project(self):
     cfile = '%s/current-%s' % (self.projects_dir, hostname())
@@ -351,7 +352,7 @@ class E:
 
   def init(self):
     shell = self.shell
-    for command in ecommands:
+    for command in ECOMMANDS:
       shell.eval_alias(command, command)
 
     self.current = self.get_current_project()
@@ -384,7 +385,7 @@ class E:
     shell.unsetenv('EHOME')
     for name in self.project_names():
       self.projects[name].delete_environment()
-    for name in ecommands:
+    for name in ECOMMANDS:
       shell.unalias(name)
 
   def ei(self):
@@ -430,7 +431,7 @@ class E:
 
   def el(self):
     name = (self.argv + [''])[0]
-    self.projects.get(name,self.current).ls()
+    self.projects.get(name, self.current).ls()
     
   def em(self):
     flags = get_flags(sys.argv)

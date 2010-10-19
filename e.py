@@ -34,7 +34,7 @@ def get_flags(argv):
     arg = argv.pop(0)
     if arg[0] == '-':
       for c in arg[1:]:
-	flags[c] = 1
+        flags[c] = 1
   return flags
 
 class BourneShell:
@@ -91,8 +91,8 @@ class CShell(BourneShell):
     stdout(self.unalias_fmt % name)
 
   def eval_alias(self, name, value):
-    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";' %
-    	(self.e.home, value, name))
+    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";' 
+        (self.e.home, value, name))
 
   def exec_alias(self, name):
     stdout('eval "$%s";' % (name))
@@ -121,7 +121,7 @@ class Slot:
     if isreserved(name):
       self.proj.e.shell.echo(
           '%s slot %d in project %s is reserved. no env/alias created.' %
-	  (name, slot, self.proj.name))
+          (name, slot, self.proj.name))
       return names
 
     # if slot doesn't have a name, we are done.
@@ -167,8 +167,8 @@ class Project:
       data = map(splitvn, open(fname).readlines())
       slot = 0
       for value, name in data:
-	self.slots.append(Slot(self, slot, value, name))
-	slot += 1
+        self.slots.append(Slot(self, slot, value, name))
+        slot += 1
     else:
       self.slots.append(Slot(self, 0))
 
@@ -215,7 +215,7 @@ class Project:
       if self.slots[slot].name == name:
         self.slots[slot].delete_environment()
         self.slots[slot] = Slot(self, slot, self.slots[slot].value, '')
-	self.slots[slot].add_environment()
+        self.slots[slot].add_environment()
 
   def slot_store(self, slot, name, value):
     if slot >= MAX_SLOTS:
@@ -249,7 +249,7 @@ class Project:
     l = len(self.slots)
     if fromslot > l and toslot > l:
       self.e.shell.echo('invalid slots %d and %d max is %d' %
-	  (fromslot, toslot, l))
+          (fromslot, toslot, l))
       return
     slots = self.slots
     toname = tovalue = fromname = fromvalue = ''
@@ -347,7 +347,7 @@ class E:
     for name in self.project_names():
       for slot in self.projects[name].slots:
         if slot.name:
-	  self.vars[slot.name] = name
+          self.vars[slot.name] = name
     for slot in self.current.slots:
       if slot.name:
         self.vars[slot.name] = self.current.name
@@ -398,7 +398,7 @@ class E:
     lines = [
       CY+"ep "+YL+"[-[tc]] [project]"+NO+":",
       "\tdisplay projects, if "+YL+"project "+NO+
-	  "specified, set it to current",
+          "specified, set it to current",
       "\t(-c creates new, -t temporary current shell only)",
       CY+"erp "+NO+YL+"project"+NO+":",
       "\tremove "+YL+"project "+NO+"(if current, default selected)",
@@ -406,22 +406,22 @@ class E:
       "\tedit "+YL+"project "+NO+"and reinit (default current)",
       CY+"ev "+NO+YL+"0-# [value]"+NO+":",
       "\tstore "+YL+"value "+NO+"to slot "+YL+"0-# "+NO+
-	  "(empty value clears)",
+          "(empty value clears)",
       CY+"en "+NO+YL+"0-# [name]"+NO+":",
       "\tmake env variable "+YL+"name "+NO+"point to slot "+YL+"#"+NO+
-	  " (empty name clears)",
+          " (empty name clears)",
       CY+"es "+NO+YL+"0-# [name] [value]"+NO+":",
       "\tmake slot "+YL+"# "+NO+"with "+YL+"name "+NO+"and "+
-	  YL+"value "+NO+"(empty name & value clears)",
+          YL+"value "+NO+"(empty name & value clears)",
       CY+"ec "+NO+YL+"name [value]"+NO+":",
       "\tmake slot with "+YL+"name "+NO+"and "+
-	  YL+"value "+NO+"(empty value clears)",
+          YL+"value "+NO+"(empty value clears)",
       CY+"el "+NO+YL+"[project]"+NO+":",
       "\tlist all slots titles in "+YL+"project "+NO+
-    	"(default current)",
+          "(default current)",
       CY+"em "+NO+YL+"[-[Aac]]"+NO+":",
       "\tlist name,value,proj "+
-    	"(-a=all projs,-A=names & <proj>_<var>,-c=color)",
+          "(-a=all projs,-A=names & <proj>_<var>,-c=color)",
       CY+"ex "+NO+YL+"from to"+NO+":",
       "\texchange slots "+YL+"from "+NO+"and "+YL+"to"+NO,
       CY+"ei"+NO+":\n\t(re)initialize environment and alises",
@@ -454,19 +454,19 @@ class E:
       project = self.projects[name]
       for slot in project.slots:
         if flags.get('A', 0) == 1:
-	  for var in slot.names():
-	    self.shell.echo(fmt % (var, slot.value, name))
-	else:
-	  if slot.name:
-	    self.shell.echo(fmt % (slot.name, slot.value, name))
+          for var in slot.names():
+            self.shell.echo(fmt % (var, slot.value, name))
+        else:
+          if slot.name:
+            self.shell.echo(fmt % (slot.name, slot.value, name))
 
   def ep(self):
     flags = get_flags(sys.argv)
     if len(self.argv):
       name = self.argv.pop(0)
       if not isidentifier(name):
-	self.shell.echo('invalid project name "%s", not an identifier' % name)
-	return
+        self.shell.echo('invalid project name "%s", not an identifier' % name)
+        return
 
       if flags.get('c', 0):
         proj = self.new_project(name)
@@ -474,11 +474,11 @@ class E:
         proj = self.projects.get(name, None)
 
       if proj:
-	self.set_current_project(proj, flags.get('t', 0)) 
-	self.ls()
+        self.set_current_project(proj, flags.get('t', 0)) 
+        self.ls()
       else:
         self.shell.echo('no project named "%s", use "ep -c %s" to create' %
-		(name, name))
+                (name, name))
     else:
       self.ls()
 

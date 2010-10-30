@@ -309,7 +309,9 @@ class E:
   def get_current_project(self):
     cfile = '%s/current-%s' % (self.projects_dir, hostname())
     name = os.environ.get('EPROJECT')
-    if name == None and os.path.exists(cfile):
+    if name != None:
+      pass
+    elif name == None and os.path.exists(cfile):
       name = open(cfile).read().strip()
     else:
       name = 'default'

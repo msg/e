@@ -510,7 +510,7 @@ class E:
     name = self.current.name 
     if len(self.argv):
       name = self.argv.pop(0)
-      if not self.projects.has_key(name):
+      if not name in self.projects:
         self.projects[name] = Project(self, name)
     self.projects[name].delete_environment()
     fname = self.projects_dir + '/' + name + '.project'

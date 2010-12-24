@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import glob, os, re, sys
 
@@ -287,10 +287,8 @@ class E:
     self.projects_dir = self.home + '/' + self.shell.projects_dir
     if not os.path.exists(self.projects_dir):
       os.mkdir(self.projects_dir)
-    self.vars = {}
     self.projects = self.read_projects()
     self.current = self.get_current_project()
-    self.update_vars()
 
   def setup_shell(self):
     shell = os.path.basename(os.environ['SHELL'])
@@ -326,7 +324,6 @@ class E:
     save = self.current
     save.delete_environment()
     self.current = project
-    self.update_vars()
     save.add_environment()
     self.current.add_environment()
     self.shell.setenv('EPROJECT', self.current.name)
@@ -341,16 +338,6 @@ class E:
 
   def project_names(self):
     return sorted(self.projects.keys())
-
-  def update_vars(self):
-    self.vars = {}
-    for name in self.project_names():
-      for slot in self.projects[name].slots:
-        if slot.name:
-          self.vars[slot.name] = name
-    for slot in self.current.slots:
-      if slot.name:
-        self.vars[slot.name] = self.current.name
 
   def init(self):
     shell = self.shell
@@ -568,6 +555,8 @@ class E:
     self.current.exchange(fromslot, toslot)
 
   def process(self):
+    if len(self.argv) == 0:
+      return
     cmd = self.argv.pop(0)
     if hasattr(self, cmd):
       eval('self.%s()' % cmd)

@@ -16,6 +16,7 @@ MAX_SLOTS = 100
 def hostname(): return os.popen('hostname -s').read().strip()
 
 def stdout(s): sys.stdout.write(s)
+def stderr(s): sys.stderr.write(s)
 
 def isbourne(shell): return shell == 'sh' or shell == 'bash' or shell == 'zsh'
 
@@ -104,7 +105,7 @@ class Slot:
     self.value = value
     self.name = name
 
-  def names(self):
+  def names(self, active):
     names = []
 
     if self.value == '':
@@ -134,17 +135,18 @@ class Slot:
     if isinit(name) and self.proj != self.proj.e.current:
       return names
 
-    names.append(name)
+    if(active):
+      names.append(name)
     return names
 
-  def add_environment(self):
+  def add_environment(self, active):
     if self.value == '':
       return
-    for name in self.names():
+    for name in self.names(active):
       self.proj.e.shell.setenv_alias(name, self.value)
 
-  def delete_environment(self):
-    for name in self.names():
+  def delete_environment(self, active):
+    for name in self.names(active):
       self.proj.e.shell.unsetenv_alias(name)
 
 class Project:
@@ -200,22 +202,22 @@ class Project:
     if self.find_slot(name):
       self.e.shell.exec_alias('%s_%s' % (self.name, name))
 
-  def add_environment(self):
+  def add_environment(self, active = False):
     for slot in self.slots:
-      slot.add_environment()
+      slot.add_environment(active)
     self.exec_current('init')
 
-  def delete_environment(self):
+  def delete_environment(self, active = False):
     self.exec_current('deinit')
     for slot in self.slots:
-      slot.delete_environment()
+      slot.delete_environment(active)
 
   def clear_name(self, name):
     for slot in range(len(self.slots)):
       if self.slots[slot].name == name:
-        self.slots[slot].delete_environment()
+        self.slots[slot].delete_environment(active = True)
         self.slots[slot] = Slot(self, slot, self.slots[slot].value, '')
-        self.slots[slot].add_environment()
+        self.slots[slot].add_environment(active = True)
 
   def slot_store(self, slot, name, value):
     if slot >= MAX_SLOTS:
@@ -231,10 +233,10 @@ class Project:
       self.clear_name(name)
     if value == None:
       value = self.slots[slot].value
-    self.slots[slot].delete_environment()
+    self.slots[slot].delete_environment(active = True)
     if value != '':
       self.slots[slot] = Slot(self, slot, value, name)
-      self.slots[slot].add_environment()
+      self.slots[slot].add_environment(active = True)
     else:
       del self.slots[slot]
     self.write()
@@ -320,15 +322,24 @@ class E:
       proj = self.new_project(name)
     return proj
 
+  def get_active_projects(self):
+    activeprjs = []
+    activeslot = self.current.find_slot('activeprjs')
+    if activeslot:
+      for name in activeslot.value.split():
+        if name in self.projects:
+          activeprjs.append(self.projects[name])
+    return activeprjs
+
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
       open(self.projects_dir + '/current-' + hostname(),'w').write(project.name+'\n')
     save = self.current
-    save.delete_environment()
+    save.delete_environment(active = True)
     self.current = project
     self.update_vars()
-    save.add_environment()
-    self.current.add_environment()
+    save.add_environment(active = False)
+    self.current.add_environment(active = True)
     self.shell.setenv('EPROJECT', self.current.name)
 
   def new_project(self, name):
@@ -362,8 +373,8 @@ class E:
     for name in self.project_names():
       project = self.projects[name]
       if project != self.current:
-        project.add_environment()
-    self.current.add_environment()
+        project.add_environment(active = False)
+    self.current.add_environment(active = True)
 
     shell.setenv('EHOME', self.home)
     shell.setenv('EPROJECT', self.current.name)
@@ -386,7 +397,7 @@ class E:
     shell.unsetenv('EPROJECT')
     shell.unsetenv('EHOME')
     for name in self.project_names():
-      self.projects[name].delete_environment()
+      self.projects[name].delete_environment(active = True)
     for name in ECOMMANDS:
       shell.unalias(name)
 
@@ -512,7 +523,7 @@ class E:
       name = self.argv.pop(0)
       if not name in self.projects:
         self.projects[name] = Project(self, name)
-    self.projects[name].delete_environment()
+    self.projects[name].delete_environment(active = True)
     fname = self.projects_dir + '/' + name + '.project'
     stdout('%s %s;ei\n' % (os.environ['EDITOR'], fname))
 

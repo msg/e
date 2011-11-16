@@ -137,6 +137,7 @@ class Slot:
 
     if(active):
       names.append(name)
+
     return names
 
   def add_environment(self, active):
@@ -335,11 +336,23 @@ class E:
     if not onlylocal:
       open(self.projects_dir + '/current-' + hostname(),'w').write(project.name+'\n')
     save = self.current
+    saved_active = self.get_active_projects()
     save.delete_environment(active = True)
     self.current = project
     self.update_vars()
-    save.add_environment(active = False)
+    new_active = self.get_active_projects()
+    if save not in new_active:
+      save.add_environment(active = False)
     self.current.add_environment(active = True)
+    for project in saved_active:
+      if project not in new_active:
+        project.delete_environment(active = True)
+        project.add_environment(active = False)
+      else:
+        new_active.delete(project)
+    for project in saved_active:
+      project.delete_environment(active = False)
+      project.add_environment(active = True)
     self.shell.setenv('EPROJECT', self.current.name)
 
   def new_project(self, name):
@@ -373,7 +386,7 @@ class E:
     for name in self.project_names():
       project = self.projects[name]
       if project != self.current:
-        project.add_environment(active = False)
+        project.add_environment(project in self.get_active_projects())
     self.current.add_environment(active = True)
 
     shell.setenv('EHOME', self.home)
@@ -465,7 +478,7 @@ class E:
       project = self.projects[name]
       for slot in project.slots:
         if flags.get('A', 0) == 1:
-          for var in slot.names():
+          for var in slot.names(active = True):
             self.shell.echo(fmt % (var, slot.value, name))
         else:
           if slot.name:
@@ -523,7 +536,8 @@ class E:
       name = self.argv.pop(0)
       if not name in self.projects:
         self.projects[name] = Project(self, name)
-    self.projects[name].delete_environment(active = True)
+    for n in self.project_names():
+      self.projects[n].delete_environment(active = True)
     fname = self.projects_dir + '/' + name + '.project'
     stdout('%s %s;ei\n' % (os.environ['EDITOR'], fname))
 

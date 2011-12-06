@@ -108,7 +108,7 @@ class Slot:
   def names(self, active):
     names = []
 
-    if self.value == '':
+    if self.value == '' or self.value[0] == '#':
       return names
 
     # add <project>_e# to list
@@ -141,7 +141,7 @@ class Slot:
     return names
 
   def add_environment(self, active):
-    if self.value == '':
+    if self.value == '' or self.value[0] == '#':
       return
     for name in self.names(active):
       self.proj.e.shell.setenv_alias(name, self.value)
@@ -272,7 +272,10 @@ class Project:
       if len(slot.value) > 60:
         s += '%-56s %s...%s ' % (slot.value[:56], RD, NO)
       else:
-        s += '%-60s ' % slot.value
+        if len(slot.value) and slot.value[0] == '#':
+          s += '%s%-60s%s ' % (RD, slot.value, NO)
+        else:
+          s += '%-60s ' % slot.value
       if slot.name:
         s += '$%-10s' % slot.name
       else:

@@ -346,17 +346,17 @@ class E:
     new_active = self.get_active_projects()
     if save not in new_active:
       save.add_environment(active = False)
-    self.current.add_environment(active = True)
     for project in saved_active:
       if project not in new_active:
         project.delete_environment(active = True)
         project.add_environment(active = False)
       else:
-        new_active.delete(project)
-    for project in saved_active:
+        new_active.remove(project)
+    for project in new_active:
       project.delete_environment(active = False)
       project.add_environment(active = True)
     self.shell.setenv('EPROJECT', self.current.name)
+    self.current.add_environment(active = True)
 
   def new_project(self, name):
     fname = self.projects_dir + '/' + name

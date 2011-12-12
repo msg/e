@@ -16,11 +16,12 @@ MAX_SLOTS = 100
 def hostname(): return os.popen('hostname -s').read().strip()
 
 def stdout(s): sys.stdout.write(s)
+def stderr(s): sys.stderr.write(s)
 
 def isbourne(shell): return shell == 'sh' or shell == 'bash' or shell == 'zsh'
 
 def iscsh(shell): return shell == 'csh'
-  
+
 def isinit(name): return name == 'init' or name == 'deinit'
 
 def isidentifier(id): return re.match('^[A-Za-z_][A-Za-z0-9_]*$', id)
@@ -49,17 +50,17 @@ class BourneShell:
 
   def setenv(self, name, value):
     stdout(self.setenv_fmt % (name, value))
-    
+
   def unsetenv(self, name):
     stdout(self.unsetenv_fmt % (name))
-    
+
   def alias(self, name, value):
     testpath = os.path.realpath(os.path.expanduser(value))
     if os.path.isdir(testpath):
       stdout(self.alias_fmt % (name, 'cd "%s"' % value))
     else:
       stdout(self.alias_fmt % (name, value))
-    
+
   def echo(self, s):
     stdout("echo '%s';\n" % s)
 
@@ -79,7 +80,7 @@ class BourneShell:
 
   def exec_alias(self, name):
     stdout(name + ';')
-    
+
 class CShell(BourneShell):
   setenv_fmt = "setenv %s \"%s\";"
   unsetenv_fmt = "unsetenv %s;"
@@ -91,12 +92,12 @@ class CShell(BourneShell):
     stdout(self.unalias_fmt % name)
 
   def eval_alias(self, name, value):
-    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";' 
+    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";'
         (self.e.home, value, name))
 
   def exec_alias(self, name):
     stdout('eval "$%s";' % (name))
-    
+
 class Slot:
   def __init__(self, proj, slot, value='', name=''):
     self.proj = proj
@@ -104,10 +105,10 @@ class Slot:
     self.value = value
     self.name = name
 
-  def names(self):
+  def names(self, active):
     names = []
 
-    if self.value == '':
+    if self.value == '' or self.value[0] == '#':
       return names
 
     # add <project>_e# to list
@@ -134,17 +135,19 @@ class Slot:
     if isinit(name) and self.proj != self.proj.e.current:
       return names
 
-    names.append(name)
+    if(active):
+      names.append(name)
+
     return names
 
-  def add_environment(self):
-    if self.value == '':
+  def add_environment(self, active):
+    if self.value == '' or self.value[0] == '#':
       return
-    for name in self.names():
+    for name in self.names(active):
       self.proj.e.shell.setenv_alias(name, self.value)
 
-  def delete_environment(self):
-    for name in self.names():
+  def delete_environment(self, active):
+    for name in self.names(active):
       self.proj.e.shell.unsetenv_alias(name)
 
 class Project:
@@ -181,7 +184,7 @@ class Project:
     for slot in self.slots:
       f.write('%s,%s\n' % (slot.value, slot.name))
     f.close()
-    
+
   def extend(self, sz):
     l = len(self.slots)
     if l > sz:
@@ -200,22 +203,22 @@ class Project:
     if self.find_slot(name):
       self.e.shell.exec_alias('%s_%s' % (self.name, name))
 
-  def add_environment(self):
+  def add_environment(self, active = False):
     for slot in self.slots:
-      slot.add_environment()
+      slot.add_environment(active)
     self.exec_current('init')
 
-  def delete_environment(self):
+  def delete_environment(self, active = False):
     self.exec_current('deinit')
     for slot in self.slots:
-      slot.delete_environment()
+      slot.delete_environment(active)
 
   def clear_name(self, name):
     for slot in range(len(self.slots)):
       if self.slots[slot].name == name:
-        self.slots[slot].delete_environment()
+        self.slots[slot].delete_environment(active = True)
         self.slots[slot] = Slot(self, slot, self.slots[slot].value, '')
-        self.slots[slot].add_environment()
+        self.slots[slot].add_environment(active = True)
 
   def slot_store(self, slot, name, value):
     if slot >= MAX_SLOTS:
@@ -231,10 +234,10 @@ class Project:
       self.clear_name(name)
     if value == None:
       value = self.slots[slot].value
-    self.slots[slot].delete_environment()
+    self.slots[slot].delete_environment(active = True)
     if value != '':
       self.slots[slot] = Slot(self, slot, value, name)
-      self.slots[slot].add_environment()
+      self.slots[slot].add_environment(active = True)
     else:
       del self.slots[slot]
     self.write()
@@ -260,7 +263,7 @@ class Project:
     self.slot_store(toslot, fromname, fromvalue)
     self.slot_store(fromslot, toname, tovalue)
     self.write()
-    
+
   def ls(self):
     shell = self.e.shell
     shell.echo('%s%-64s%s $name' % (YL, self.name, NO))
@@ -269,7 +272,10 @@ class Project:
       if len(slot.value) > 60:
         s += '%-56s %s...%s ' % (slot.value[:56], RD, NO)
       else:
-        s += '%-60s ' % slot.value
+        if len(slot.value) and slot.value[0] == '#':
+          s += '%s%-60s%s ' % (RD, slot.value, NO)
+        else:
+          s += '%-60s ' % slot.value
       if slot.name:
         s += '$%-10s' % slot.name
       else:
@@ -305,7 +311,7 @@ class E:
       proj = os.path.basename(pname).replace('.project','')
       projects[proj] = Project(self, proj)
     return projects
-    
+
   def get_current_project(self):
     cfile = '%s/current-%s' % (self.projects_dir, hostname())
     name = os.environ.get('EPROJECT')
@@ -320,16 +326,37 @@ class E:
       proj = self.new_project(name)
     return proj
 
+  def get_active_projects(self):
+    activeprjs = []
+    activeslot = self.current.find_slot('activeprjs')
+    if activeslot:
+      for name in activeslot.value.split():
+        if name in self.projects:
+          activeprjs.append(self.projects[name])
+    return activeprjs
+
   def set_current_project(self, project, onlylocal=False):
     if not onlylocal:
       open(self.projects_dir + '/current-' + hostname(),'w').write(project.name+'\n')
     save = self.current
-    save.delete_environment()
+    saved_active = self.get_active_projects()
+    save.delete_environment(active = True)
     self.current = project
     self.update_vars()
-    save.add_environment()
-    self.current.add_environment()
+    new_active = self.get_active_projects()
+    if save not in new_active:
+      save.add_environment(active = False)
+    for project in saved_active:
+      if project not in new_active:
+        project.delete_environment(active = True)
+        project.add_environment(active = False)
+      else:
+        new_active.remove(project)
+    for project in new_active:
+      project.delete_environment(active = False)
+      project.add_environment(active = True)
     self.shell.setenv('EPROJECT', self.current.name)
+    self.current.add_environment(active = True)
 
   def new_project(self, name):
     fname = self.projects_dir + '/' + name
@@ -362,15 +389,15 @@ class E:
     for name in self.project_names():
       project = self.projects[name]
       if project != self.current:
-        project.add_environment()
-    self.current.add_environment()
+        project.add_environment(project in self.get_active_projects())
+    self.current.add_environment(active = True)
 
     shell.setenv('EHOME', self.home)
     shell.setenv('EPROJECT', self.current.name)
 
     if type(shell) == CShell:
       shell.unsetenv('e')
-    
+
   def ls(self):
     for name in self.project_names():
       project = self.projects[name]
@@ -386,7 +413,7 @@ class E:
     shell.unsetenv('EPROJECT')
     shell.unsetenv('EHOME')
     for name in self.project_names():
-      self.projects[name].delete_environment()
+      self.projects[name].delete_environment(active = True)
     for name in ECOMMANDS:
       shell.unalias(name)
 
@@ -434,7 +461,7 @@ class E:
   def el(self):
     name = (self.argv + [''])[0]
     self.projects.get(name, self.current).ls()
-    
+
   def em(self):
     flags = get_flags(sys.argv)
 
@@ -446,7 +473,7 @@ class E:
       names = [ self.current.name ]
 
     if flags.get('c', 0) == 1:
-      fmt = CY + '$%s' + NO + ',%s,' + GR + '%s' + NO 
+      fmt = CY + '$%s' + NO + ',%s,' + GR + '%s' + NO
     else:
       fmt = '$%s,%s,%s'
 
@@ -454,7 +481,7 @@ class E:
       project = self.projects[name]
       for slot in project.slots:
         if flags.get('A', 0) == 1:
-          for var in slot.names():
+          for var in slot.names(active = True):
             self.shell.echo(fmt % (var, slot.value, name))
         else:
           if slot.name:
@@ -474,7 +501,7 @@ class E:
         proj = self.projects.get(name, None)
 
       if proj:
-        self.set_current_project(proj, flags.get('t', 0)) 
+        self.set_current_project(proj, flags.get('t', 0))
         self.ls()
       else:
         self.shell.echo('no project named "%s", use "ep -c %s" to create' %
@@ -507,12 +534,13 @@ class E:
     self.ls()
 
   def eep(self):
-    name = self.current.name 
+    name = self.current.name
     if len(self.argv):
       name = self.argv.pop(0)
       if not name in self.projects:
         self.projects[name] = Project(self, name)
-    self.projects[name].delete_environment()
+    for n in self.project_names():
+      self.projects[n].delete_environment(active = True)
     fname = self.projects_dir + '/' + name + '.project'
     stdout('%s %s;ei\n' % (os.environ['EDITOR'], fname))
 

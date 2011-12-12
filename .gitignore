@@ -1,3 +1,6 @@
 *.project
 *.oldproject
 current-*
+*.swp
+*.swo
+*.pyc

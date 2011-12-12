@@ -21,7 +21,7 @@ def stderr(s): sys.stderr.write(s)
 def isbourne(shell): return shell == 'sh' or shell == 'bash' or shell == 'zsh'
 
 def iscsh(shell): return shell == 'csh'
-  
+
 def isinit(name): return name == 'init' or name == 'deinit'
 
 def isidentifier(id): return re.match('^[A-Za-z_][A-Za-z0-9_]*$', id)
@@ -50,17 +50,17 @@ class BourneShell:
 
   def setenv(self, name, value):
     stdout(self.setenv_fmt % (name, value))
-    
+
   def unsetenv(self, name):
     stdout(self.unsetenv_fmt % (name))
-    
+
   def alias(self, name, value):
     testpath = os.path.realpath(os.path.expanduser(value))
     if os.path.isdir(testpath):
       stdout(self.alias_fmt % (name, 'cd "%s"' % value))
     else:
       stdout(self.alias_fmt % (name, value))
-    
+
   def echo(self, s):
     stdout("echo '%s';\n" % s)
 
@@ -80,7 +80,7 @@ class BourneShell:
 
   def exec_alias(self, name):
     stdout(name + ';')
-    
+
 class CShell(BourneShell):
   setenv_fmt = "setenv %s \"%s\";"
   unsetenv_fmt = "unsetenv %s;"
@@ -92,12 +92,12 @@ class CShell(BourneShell):
     stdout(self.unalias_fmt % name)
 
   def eval_alias(self, name, value):
-    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";' 
+    stdout('set e=(eval \\"\\`%s/e.py %s \\!\\*\\`\\");alias %s "$e";'
         (self.e.home, value, name))
 
   def exec_alias(self, name):
     stdout('eval "$%s";' % (name))
-    
+
 class Slot:
   def __init__(self, proj, slot, value='', name=''):
     self.proj = proj
@@ -184,7 +184,7 @@ class Project:
     for slot in self.slots:
       f.write('%s,%s\n' % (slot.value, slot.name))
     f.close()
-    
+
   def extend(self, sz):
     l = len(self.slots)
     if l > sz:
@@ -263,7 +263,7 @@ class Project:
     self.slot_store(toslot, fromname, fromvalue)
     self.slot_store(fromslot, toname, tovalue)
     self.write()
-    
+
   def ls(self):
     shell = self.e.shell
     shell.echo('%s%-64s%s $name' % (YL, self.name, NO))
@@ -311,7 +311,7 @@ class E:
       proj = os.path.basename(pname).replace('.project','')
       projects[proj] = Project(self, proj)
     return projects
-    
+
   def get_current_project(self):
     cfile = '%s/current-%s' % (self.projects_dir, hostname())
     name = os.environ.get('EPROJECT')
@@ -397,7 +397,7 @@ class E:
 
     if type(shell) == CShell:
       shell.unsetenv('e')
-    
+
   def ls(self):
     for name in self.project_names():
       project = self.projects[name]
@@ -461,7 +461,7 @@ class E:
   def el(self):
     name = (self.argv + [''])[0]
     self.projects.get(name, self.current).ls()
-    
+
   def em(self):
     flags = get_flags(sys.argv)
 
@@ -473,7 +473,7 @@ class E:
       names = [ self.current.name ]
 
     if flags.get('c', 0) == 1:
-      fmt = CY + '$%s' + NO + ',%s,' + GR + '%s' + NO 
+      fmt = CY + '$%s' + NO + ',%s,' + GR + '%s' + NO
     else:
       fmt = '$%s,%s,%s'
 
@@ -501,7 +501,7 @@ class E:
         proj = self.projects.get(name, None)
 
       if proj:
-        self.set_current_project(proj, flags.get('t', 0)) 
+        self.set_current_project(proj, flags.get('t', 0))
         self.ls()
       else:
         self.shell.echo('no project named "%s", use "ep -c %s" to create' %
@@ -534,7 +534,7 @@ class E:
     self.ls()
 
   def eep(self):
-    name = self.current.name 
+    name = self.current.name
     if len(self.argv):
       name = self.argv.pop(0)
       if not name in self.projects:

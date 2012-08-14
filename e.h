@@ -12,6 +12,11 @@ using std::string;
 using std::vector;
 using std::map;
 
+#define sequence_for_each(type, iter, seq) \
+	for (type::iterator iter = seq.begin(); iter != seq.end(); iter++)
+#define sequence_for_each_reverse(type, iter, seq) \
+	for (type::iterator iter = seq.rbegin(); iter != seq.rend(); iter++)
+
 class E;
 class Project;
 class Slot;
@@ -29,13 +34,9 @@ public:
 	}
 };
 
-class slot_list : public vector<Slot *> {
-public:
-};
-
 class Shell {
 public:
-	Shell(E *e_) : e(e_) { }
+	Shell(E *e_) : e(e_) { name = "sh"; }
 	virtual ~Shell(void) { }
 
 	void setenv(const string& name, const string& value);
@@ -50,6 +51,7 @@ public:
 	void echo(const char *fmt, ...);
 
 	E *e;
+	string name;
 };
 
 class Slot {
@@ -70,18 +72,36 @@ public:
 	string name;
 };
 
+class slot_list : public vector<Slot *> {
+public:
+	Slot *get(const string& name)
+	{
+		slot_list &slots = *this;
+		sequence_for_each(slot_list, slotsi, slots) {
+			if ((*slotsi)->name == name)
+				return *slotsi;
+		}
+		return NULL;
+	}
+};
+
+enum project_flags {
+	no_e_vars		= 0x0001,
+	no_global_e_vars	= 0x0002,
+	no_project_vars		= 0x0004,
+	no_global_vars		= 0x0008,
+};
+
 class Project {
 public:
-	Project(E *e_, const string& name_) : e(e_), name(name_) {
-		read();
-	}
+	Project(E *e, const string& name);
 	virtual ~Project(void) { }
 
 	// methods
 	void read(void);
 	void write(void);
 	void extend(int size);
-	Slot *find_slot(const string& name);
+	void update_flags(void);
 	void exec_current(const string& name);
 	void add_environment(void);
 	void delete_environment(void);
@@ -95,7 +115,9 @@ public:
 	// members
 	E *e;
 	string name;
+	string filename;
 	slot_list slots;
+	int flags;
 };
 
 class E {
@@ -130,6 +152,7 @@ public:
 	// members
 	string_list args;
 	string home;
+	string projects_path;
 	string e_path;
 	Shell *shell;
 	project_map projects;

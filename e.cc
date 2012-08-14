@@ -31,11 +31,6 @@ using std::pair;
 // internal methods
 // ---------------------------------------------------------------
 
-#define sequence_for_each(type, iter, seq) \
-	for (type::iterator iter = seq.begin(); iter != seq.end(); iter++)
-#define sequence_for_each_reverse(type, iter, seq) \
-	for (type::iterator iter = seq.rbegin(); iter != seq.rend(); iter++)
-
 string pop_arg(string_list *args)
 {
 	string s;
@@ -55,6 +50,20 @@ string hostname(void)
 	return name;
 }
 
+string get_flags(string_list *args)
+{
+	string flags;
+	string_list::iterator sli = args->begin();
+	while (sli != args->end()) {
+		if ((*sli)[0] == '-') {
+			flags += sli->substr(1);
+			args->erase(sli);
+		} else
+			sli++;
+	}
+	return flags;
+}
+
 string environ_get(const string& name, const string& default_="")
 {
 	char *var = getenv(name.c_str());
@@ -64,7 +73,7 @@ string environ_get(const string& name, const string& default_="")
 		return var;
 }
 
-bool isdir(const string& path)
+bool is_dir(const string& path)
 {
 	struct stat st;
 	int rc = stat(path.c_str(), &st);
@@ -73,7 +82,7 @@ bool isdir(const string& path)
 	return S_ISDIR(st.st_mode);
 }
 
-bool isinit(const string& name)
+bool is_init_var(const string& name)
 {
 	return name == "init" || name == "deinit";
 }
@@ -83,14 +92,13 @@ const char *ecommands[] = {
 	"es", "en", "ev", "ec", "ex", NULL,
 };
 
-bool isreserved(const string& s)
+bool is_reserved(const string& s)
 {
-	int i;
-	for (i = 0; ecommands[i]; i++) {
+	for (int i = 0; ecommands[i]; i++) {
 		if (s == ecommands[i])
 			return true;;
 	}
-	for (i = 0; i < MAX_SLOTS; i++) {
+	for (int i = 0; i < MAX_SLOTS; i++) {
 		char buf[10];
 		sprintf(buf, "%d", i);
 		if (s == "e" + string(buf))
@@ -99,7 +107,7 @@ bool isreserved(const string& s)
 	return false;
 }
 
-bool isidentifier(const string& s)
+bool is_identifier(const string& s)
 {
 	char c = s[0];
 	// "[A-Za-z_][A-Za-z0-9_]"
@@ -129,7 +137,7 @@ void Shell::unsetenv(const string& name)
 
 void Shell::alias(const string& name, const string& value)
 {
-	if (isdir(value)) {
+	if (is_dir(value)) {
 		printf("%s () {\n\tcd \"%s\"\n}\n", name.c_str(), value.c_str());
 	} else
 		printf("%s () {\n\t%s\n}\n", name.c_str(), value.c_str());
@@ -186,37 +194,43 @@ Slot::Slot(Project *project_, int slot_,
 
 string_list Slot::names(void)
 {
+	Project *current = project->e->current;
 	string_list strings;
+	string ename = stringf("e%d", slot);
+
 	if (value == "")
-		return strings;
+		goto done;
 
-	// add <project>_e# to list
-	strings.push_back(stringf("%s_e%d", project->name.c_str(), slot));
+	// if slot does not have a name, add <project>_e# to list
+	if (name == "" && !(project->flags & no_global_e_vars))
+		strings.push_back(project->name + "_" + ename);
 
-	if (project == project->e->current)
-		strings.push_back(stringf("e%d", slot));
+	if (project == current && name == "" && !(project->flags & no_e_vars))
+		strings.push_back(ename);
 
-	if (isreserved(name)) {
+	if (is_reserved(name)) {
 		string s;
 		s = stringf("name %s is reserved in slot %d in project %s. "
 			"no env/alias created.",
 			name.c_str(), slot, project->name.c_str());
 		project->e->shell->echo(s.c_str());
-		return strings;
+		goto done;
 	}
 
 	// if slot doesn't have a name, we're done.
 	if (name == "")
-		return strings;
+		goto done;
 
-	strings.push_back(stringf("%s_%s", project->name.c_str(),
-				name.c_str()));
+	if (project == current || !(project->flags & no_global_vars))
+		strings.push_back(project->name + "_" + name);
 
 	// init type names are only added if project is current
-	if (isinit(name) && project != project->e->current)
-		return strings;
+	if (project != current && is_init_var(name))
+		goto done;
 
-	strings.push_back(name);
+	if (project == current || !(project->flags & no_project_vars))
+		strings.push_back(name);
+done:
 	return strings;
 }
 
@@ -261,18 +275,26 @@ static string_list split_value_name(const string &line)
 static slot_entries split_value_names(const string &data)
 {
 	string_list lines = split(data, "\n");
-	string_list fields;
 	slot_entries slots;
 	sequence_for_each(string_list, linesi, lines) {
-		fields = split_value_name(*linesi);
+		string_list fields = split_value_name(*linesi);
 		slots.push_back(make_pair(fields[0], fields[1]));
 	}
 	return slots;
 }
 
+Project::Project(E *e, const string& name) :
+	e(e),
+	name(name),
+	flags(0)
+{
+	filename = e->projects_path + "/" + name + ".project";
+	read();
+}
+
 void Project::read(void)
 {
-	string filename = e->home + "/sh/" + name + ".project";
+	slots.clear();
 	if (path_exists(filename)) {
 		string data = strip(readpath(filename));
 		slot_entries entries = split_value_names(data);
@@ -288,7 +310,6 @@ void Project::read(void)
 
 void Project::write(void)
 {
-	string filename = e->home + "/sh/" + name + ".project";
 	string data;
 	sequence_for_each(slot_list, slotsi, slots) {
 		data += (*slotsi)->value + "," + (*slotsi)->name + "\n";
@@ -296,25 +317,33 @@ void Project::write(void)
 	writepath(filename, data);
 }
 
-Slot *Project::find_slot(const string& name)
-{
-	sequence_for_each(slot_list, slotsi, slots) {
-		if ((*slotsi)->name == name)
-			return *slotsi;
-	}
-	return NULL;
-}
-
 void Project::exec_current(const string& name_)
 {
-	if (this == e->current && find_slot(name_) != NULL) {
-		string s = stringf("%s_%s", name.c_str(), name_.c_str());
-		e->shell->exec_alias(s);
-	}
+	if (this == e->current && slots.get(name_) != NULL)
+		e->shell->exec_alias(name + "_" + name_);
+}
+
+void Project::update_flags(void)
+{
+	Slot *slot = slots.get("eflags");
+	if (slot == NULL)
+		return;
+	string_list args = split(slot->value);
+	string sflags = get_flags(&args);
+	flags = 0;
+	if (sflags.find('e') != sflags.npos) 
+		flags |= no_e_vars;
+	if (sflags.find('E') != sflags.npos) 
+		flags |= no_global_e_vars;
+	if (sflags.find('p') != sflags.npos) 
+		flags |= no_project_vars;
+	if (sflags.find('P') != sflags.npos) 
+		flags |= no_global_vars;
 }
 
 void Project::add_environment(void)
 {
+	update_flags();
 	sequence_for_each(slot_list, slotsi, slots) {
 		(*slotsi)->add_environment();
 	}
@@ -323,6 +352,7 @@ void Project::add_environment(void)
 
 void Project::delete_environment(void)
 {
+	update_flags();
 	exec_current("deinit");
 	sequence_for_each(slot_list, slotsi, slots) {
 		(*slotsi)->delete_environment();
@@ -331,6 +361,7 @@ void Project::delete_environment(void)
 
 void Project::clear_name(const string& name)
 {
+	update_flags();
 	sequence_for_each(slot_list, slotsi, slots) {
 		Slot *slot = *slotsi;
 		if (slot->name == name) {
@@ -348,7 +379,7 @@ void Project::slot_store(int slot, string name, string value)
 		return;
 	}
 
-	if (name != "" && !isidentifier(name)) {
+	if (name != "" && !is_identifier(name)) {
 		e->shell->echo("invalid name \"%s\", not an identifier",
 				name.c_str());
 		return;
@@ -367,6 +398,7 @@ void Project::slot_store(int slot, string name, string value)
 		delete slotp;
 	}
 	slotp = new Slot(this, slot, value, name);
+	update_flags();
 	slotp->add_environment();
 	slots[slot] = slotp;
 
@@ -438,9 +470,10 @@ E::E(int argc, char **argv)
 	}
 	e_path = abspath(argv[0]);
 	home = environ_get("EHOME", abspath(environ_get("HOME") + "/.e"));
-	if (!path_exists(home))
-		mkdirp(home);
 	setup_shell();
+	projects_path = home + "/" + shell->name;
+	if (!path_exists(projects_path))
+		mkdirp(projects_path);
 	read_projects();
 	current = get_current_project();
 }
@@ -459,11 +492,10 @@ void E::setup_shell(void)
 void E::read_projects(void)
 {
 	projects.clear();
-	string name;
-	string_list names = globfiles(home + "/sh/*.project");
+	string_list names = globfiles(projects_path + "/*.project");
 	sequence_for_each(string_list, sli, names) {
 		// remove $EHOME/sh/ and .project
-		name = basepath(sli->substr(0, sli->length()-8));
+		string name = basepath(sli->substr(0, sli->length()-8));
 		projects[name] = new Project(this, name);
 	}
 }
@@ -471,7 +503,7 @@ void E::read_projects(void)
 Project *E::get_current_project(bool use_env)
 {
 	string eproject = environ_get("EPROJECT");
-	string cfile = home + "/sh/current-" + hostname();
+	string cfile = projects_path + "/current-" + hostname();
 	string s;
 	if (use_env && eproject.length() != 0)
 		s = eproject;
@@ -488,7 +520,8 @@ Project *E::get_current_project(bool use_env)
 void E::set_current_project(Project *project, bool local_only)
 {
 	if (!local_only) {
-		string filename = home + "/sh/current-" + hostname();
+		string filename;
+		filename = projects_path + "/current-" + hostname();
 		writepath(filename, project->name + "\n");
 	}
 	Project *save = current;
@@ -501,13 +534,12 @@ void E::set_current_project(Project *project, bool local_only)
 
 void E::new_project(const string& name)
 {
-	string filename = home + "/sh/" + name;
-	string old_filename = filename + ".oldproject";
-	if (path_exists(old_filename)) {
-		string new_filename = filename + ".project";
-		rename(old_filename.c_str(), new_filename.c_str());
-	}
 	Project *project = new Project(this, name);
+	string old_filename = project->filename + ".old";
+	if (path_exists(old_filename)) {
+		rename(old_filename.c_str(), project->filename.c_str());
+		project->read();
+	}
 	projects[name] = project;
 	project->write();
 }
@@ -562,8 +594,7 @@ void E::eq(void)
 		pmi->second->delete_environment();
 	}
 
-	const char **ecommand;
-	for (ecommand = ecommands; *ecommand != NULL; ecommand++) {
+	for (const char **ecommand = ecommands; *ecommand != NULL; ecommand++) {
 		shell->unalias(*ecommand);
 	}
 }
@@ -574,7 +605,7 @@ void E::ei(void)
 }
 
 const char *help_lines[] = {
-	CY "ep " YL "[-[tc]] [project" NO ":",
+	CY "ep " YL "[-[tc]] [project]" NO ":",
 	"\tdisplay projects, if " YL "project " NO 
 		"specified, set it to current",
 	CY "erp " YL "project" NO ":",
@@ -619,20 +650,6 @@ void E::el(void)
 	if (project == NULL)
 		project = current;
 	project->ls();
-}
-
-string get_flags(string_list *args)
-{
-	string flags;
-	string_list::iterator sli = args->begin();
-	while (sli != args->end()) {
-		if ((*sli)[0] == '-') {
-			flags += sli->substr(1);
-			args->erase(sli);
-		} else
-			sli++;
-	}
-	return flags;
 }
 
 static inline void em_slot_all_names(const char *fmt, Shell *shell,
@@ -688,7 +705,7 @@ void E::ep(void)
 		return;
 	}
 	string name = pop_arg(&args);
-	if (!isidentifier(name)) {
+	if (!is_identifier(name)) {
 		shell->echo("invalid project name \"%s\", not an identifier",
 				name.c_str());
 		return;
@@ -732,11 +749,11 @@ void E::erp(void)
 	project->delete_environment();
 	if (project == current)
 		set_current_project(projects.get("default"));
-	delete project;
 
-	string old_filename = home + "/sh/" + name + ".project";
-	string new_filename = home + "/sh/" + name + ".oldproject";
-	rename(old_filename.c_str(), new_filename.c_str());
+	string new_filename = project->filename + ".old";
+	rename(project->filename.c_str(), new_filename.c_str());
+
+	delete project;
 
 	ls();
 }
@@ -753,9 +770,8 @@ void E::eep(void)
 		projects[name] = project;
 	}
 	project->delete_environment();
-	string filename = home + "/sh/" + name + ".project";
 	string editor = environ_get("EDITOR", "vi").c_str();
-	printf("%s %s;ei\n", editor.c_str(), filename.c_str());
+	printf("%s %s;ei\n", editor.c_str(), project->filename.c_str());
 }
 
 void E::es(void)

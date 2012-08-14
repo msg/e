@@ -11,6 +11,7 @@
 #include <alloca.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <libgen.h>
 #include <glob.h>
 #include <ftw.h>

@@ -210,13 +210,18 @@ inline string stringf(const char *fmt, ...)
 	int l;
 	va_start(ap, fmt);
 	l = vsnprintf(0, 0, fmt, ap);
+	va_end(ap);
 	char buf[l+1];
+	va_start(ap, fmt);
 	vsnprintf(buf, l+1, fmt, ap);
+	va_end(ap);
 	return string(buf);
 }
 
 inline string vstringf(const char *fmt, va_list ap)
 {
+	va_list nap;
+	va_copy(nap, ap);
 	int l = vsnprintf(0, 0, fmt, ap);
 	char buf[l+1];
 	vsnprintf(buf, l+1, fmt, ap);

@@ -18,7 +18,7 @@ using std::string;
 
 inline string get_line(string *s, char delim='\n')
 {
-	unsigned int nl = s->find(delim);
+	string::size_type nl = s->find(delim);
 	string ns = s->substr(0, nl+1);
 	s->erase(0, nl+1);
 	return ns;
@@ -204,28 +204,38 @@ inline int parse_byte(const string& s, long long *size)
 	return 0;
 }
 
-inline string stringf(const char *fmt, ...)
-{
-	va_list ap;
-	int l;
-	va_start(ap, fmt);
-	l = vsnprintf(0, 0, fmt, ap);
-	va_end(ap);
-	char buf[l+1];
-	va_start(ap, fmt);
-	vsnprintf(buf, l+1, fmt, ap);
-	va_end(ap);
-	return string(buf);
-}
+
+string vstringf(const char *fmt, va_list ap)
+	__attribute__ ((format (printf, 1, 0)));
 
 inline string vstringf(const char *fmt, va_list ap)
 {
 	va_list nap;
 	va_copy(nap, ap);
-	int l = vsnprintf(0, 0, fmt, ap);
+	int l = vsnprintf(0, 0, fmt, nap);
+	va_end(nap);
 	char buf[l+1];
+	va_copy(nap, ap);
+	vsnprintf(buf, l+1, fmt, nap);
+	va_end(nap);
+	return buf;
+}
+
+string stringf(const char *fmt, ...)
+	__attribute__ ((format (printf, 1, 2)));
+
+
+inline string stringf(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	int l = vsnprintf(0, 0, fmt, ap);
+	va_end(ap);
+	char buf[l+1];
+	va_start(ap, fmt);
 	vsnprintf(buf, l+1, fmt, ap);
-	return string(buf);
+	va_end(ap);
+	return buf;
 }
 
 inline string tolower_string(const string& str)

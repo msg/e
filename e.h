@@ -106,7 +106,7 @@ public:
 	void add_environment(void);
 	void delete_environment(void);
 	void clear_name(const string& name);
-	void slot_store(int slot, string name, string value);
+	void slot_store(int slot, const string& name, const string& value);
 	void slot_name(int slot, const string& name);
 	void slot_value(int slot, const string& value);
 	void exchange(int fromslot, int toslot);

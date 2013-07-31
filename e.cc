@@ -372,7 +372,7 @@ void Project::clear_name(const string& name)
 	}
 }
 
-void Project::slot_store(int slot, string name, string value)
+void Project::slot_store(int slot, const string& name, const string& value)
 {
 	if (slot >= MAX_SLOTS) {
 		e->shell->echo("invalid slot %d, max is %d", slot, MAX_SLOTS);
@@ -416,12 +416,18 @@ void Project::slot_store(int slot, string name, string value)
 
 void Project::slot_name(int slot, const string& name)
 {
-	slot_store(slot, name, slots[slot]->value);
+	if (slot < (int)slots.size())
+		slot_store(slot, name, slots[slot]->value);
+	else
+		slot_store(slot, name, "");
 }
 
 void Project::slot_value(int slot, const string& value)
 {
-	slot_store(slot, slots[slot]->name, value);
+	if (slot < (int)slots.size())
+		slot_store(slot, slots[slot]->name, value);
+	else
+		slot_store(slot, "", value);
 }
 
 void Project::exchange(int from, int to)
@@ -801,7 +807,7 @@ void E::ev(void)
 {
 	int slot = integer(pop_arg(&args), -1);
 	if (slot < 0)
-		shell->echo("usage: en slot [avlue]");
+		shell->echo("usage: en slot [value]");
 	else 
 		current->slot_value(slot, join(args, " "));
 }

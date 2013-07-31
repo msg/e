@@ -1,13 +1,25 @@
-
 ==========================
 e - e-nvironment processor
 ==========================
 
-------------
-Description:
-------------
+:Author: mgeras@gmail.com
+:Date:   2013-07-19
+:Copyright: GPLv2
+:Version: 0.1
+:Manual section: 1
+:Manual group: environment handling
 
-**e** is an python script that helps manage a user's shell environment.
+.. TODO: Matt Gerassimoff <mgeras@gmail.com>
+
+SYNOPSIS
+========
+
+  $ mkdir -p ~/.e/sh; eval "$(/usr/bin/e init)"
+
+DESCRIPTION
+===========
+
+**e** is an application that helps manage a user's shell environment.
 This includes shell functions in bash, aliases in cshell and environment
 variables.  It allows environment variables to be grouped into projects.
 Projects are groups of environment variables that share some sort of
@@ -16,197 +28,194 @@ in the course of a day and got tired of updating ``.<shell>rc`` files
 to handle environment variables.  Plus, I work on several hosts each
 with differing projects.  **e** also allows evaluating environment
 variables to all quick execution of environment stored in e project
-file.  It works with bash, zsh, and csh (though more complex **e** usage
-requires specific shell settings).  It is great for dynamic interactive
+file.  It works with bash, zsh, and csh. For csh, more complex **e** usage
+requires specific shell settings.  It is great for dynamic interactive
 shell sessions with many repetitive commands that require a lot of typing.
 Plus, if you use environment variables with the same names for ease of
 remembering, **e** allows switching projects and whole environment
 variables quickly.
 
--------------
-Installation:
--------------
+INSTALLATION 
+============
 
-1. ``mkdir $HOME/.e``
+1. ``mkdir -p $HOME/.e/sh``
 
-2. Download ``e.py`` into ``$HOME/.e``
+2. Download ``e`` into ``/usr/bin/e``
 
-3. in ``.<shell>rc``:
+3. in ``.<shell>rc`` or ``.profile``:
 
    - in bash or zsh add a line:
 
-     ``eval "$(~/.e/e.py init)"``
+     ``eval "$(~/.e/e init)"``
 
    - in csh add a line:
 
-     ``eval "`$HOME/.e/e.py init`"``
+     ``eval "`$HOME/.e/e init`"``
 
-------
-Usage:
-------
+USAGE
+=====
 
 **e** has commands that are set up as shell functions (bash, zsh)
 or aliases (csh) that can be typed at the prompt.  Most commands are 2
 characters for brevity and speed at the command line.  The most important
 one is ``eh``.  ``eh`` will show the available **e** commands available.
 
-  **Projects:**
+**Projects:**
 
-  An **e** project contains numbered *slots* starting from 0 going to
-  the number of entries contained in a project.  Projects can have
-  upto 100 *slots* for entries (0-99).  But this can be adjusted on a
-  per-project basis.
+An **e** project contains numbered *slots* starting from 0 going to
+the number of entries contained in a project.  Projects can have
+upto 100 *slots* for entries (0-99).  But this can be adjusted on a
+per-project basis.
 
-  Projects are managed with the ``ep [[-c] <name>]`` command.
-  If ``<name>`` is missing, this will list the available projects, and
-  show the current project of the current host with a ``>`` in front
-  of the title and in a different color.  When ``<name>`` is specified,
-  one of two things will happen.  If ``<name>`` is the name of an existing
-  project, it's environment is loaded into the shell.  If ``<name>``
-  is not an existing project, then a new empty project is created.
+Projects are managed with the ``ep [[-c] <name>]`` command.
+If ``<name>`` is missing, this will list the available projects, and
+show the current project of the current host with a ``>`` in front
+of the title and in a different color.  When ``<name>`` is specified,
+one of two things will happen.  If ``<name>`` is the name of an existing
+project, it's environment is loaded into the shell.  If ``<name>``
+is not an existing project, then a new empty project is created.
 
-  Projects can be deleted with the ``erp <name>`` command.  It doesn't
-  really delete the project.  It just removes it from the list of
-  available projects.  Basically there is a project file with the
-  list of all the *slots* for that project and it gets renamed so the
-  project list function doesn't see it (them).
+Projects can be deleted with the ``erp <name>`` command.  It doesn't
+really delete the project.  It just removes it from the list of
+available projects.  Basically there is a project file with the
+list of all the *slots* for that project and it gets renamed so the
+project list function doesn't see it (them).
 
-  Project files are stored in files named: ``$HOME/.e/<name>.project``.
-  When projects are deleted the project name becomes
-  ``<name>.oldproject``.  They can be removed with ``rm`` if desired.
-  Removed project files will be restored with ``ep <name>`` if
-  ``$HOME/.e/<name>.oldproject`` exists.  It gets renamed with a
-  ``.project`` extension when the ``ep`` command is executed.  Removing
-  a project is a way to hide projects when they are not in use.
+Project files are stored in files named: ``$HOME/.e/sh/<name>.project``.
+When projects are deleted the project name becomes
+``<name>.oldproject``.  They can be removed with ``rm`` if desired.
+Removed project files will be restored with ``ep <name>`` if
+``$HOME/.e/sh/<name>.oldproject`` exists.  It gets renamed with a
+``.project`` extension when the ``ep`` command is executed.  Removing
+a project is a way to hide projects when they are not in use.
 
-  **Environment variables and slots:**
+**Environment variables and slots:**
 
-  Each slot in a project contains a value and possibly a name.  Slots are
-  managed via the ``es``, ``en``, and ``ev``.  They useful when a command
-  is evaluated very frequently.   There are several other commands for
-  managing several slots discussed below.
+Each slot in a project contains a value and possibly a name.  Slots are
+managed via the ``es``, ``en``, and ``ev``.  They useful when a command
+is evaluated very frequently.   There are several other commands for
+managing several slots discussed below.
 
-  The ``es # <name> <value>`` store ``<value>`` into *slot* # named
-  ``<name>``.  ``es #`` creates several shell environment settings.
-  First it creates an ``$e#`` variable set to ``<value>``.  Then,
-  it creates a command ``e#`` that evaluates ``<value>``.  It also
-  creates an ``$<name>`` variable. If another slot contains ``<name>``,
-  it will be removed and moved to the new slot.  Also, a command named
-  ``<name>`` will be created or replaced if ``<name>`` doesn't conflict
-  with normal **e** commands.  The command is useful for evaluating the
-  ``<value>`` in the current shell so commands like ``cd`` will work.
-  If both ``<name>`` and ``value`` are not specified the *slot* is cleared
-  as well as all the variables and shell commands.  If ``<value>`` can
-  be detected as a directory, the shell command becomes a ``cd <value>``
-  instead of the actual ``<value>`` for conveience.
+The ``es # <name> <value>`` store ``<value>`` into *slot* # named
+``<name>``.  ``es #`` creates several shell environment settings.
+First it creates an ``$e#`` variable set to ``<value>``.  Then,
+it creates a command ``e#`` that evaluates ``<value>``.  It also
+creates an ``$<name>`` variable. If another slot contains ``<name>``,
+it will be removed and moved to the new slot.  Also, a command named
+``<name>`` will be created or replaced if ``<name>`` doesn't conflict
+with normal **e** commands.  The command is useful for evaluating the
+``<value>`` in the current shell so commands like ``cd`` will work.
+If both ``<name>`` and ``value`` are not specified the *slot* is cleared
+as well as all the variables and shell commands.  If ``<value>`` can
+be detected as a directory, the shell command becomes a ``cd <value>``
+instead of the actual ``<value>`` for conveience.
 
-  The ``en # <name>`` change ``<name>`` of *slot* #.  This is a convience
-  command allowing the setting of just the *slot* name.  If ``<name>``
-  is not specified, it is cleared from the *slot*.
+The ``en # <name>`` change ``<name>`` of *slot* #.  This is a convience
+command allowing the setting of just the *slot* name.  If ``<name>``
+is not specified, it is cleared from the *slot*.
 
-  ``ev # <value>`` is a convience command allowing the setting just the
-  *slot* value.
+``ev # <value>`` is a convience command allowing the setting just the
+*slot* value.
 
-  **e** also contains per project variables.  They can be referenced
-  ``$e<project-name>_<var>``, where var is an actual name of a
-  *slot* or ``e#`` referencing the index.  They may be evaluated via
-  ``e<project-name>_<var>`` as well.
+**e** also contains per project variables.  They can be referenced
+``$e<project-name>_<var>``, where var is an actual name of a
+*slot* or ``e#`` referencing the index.  They may be evaluated via
+``e<project-name>_<var>`` as well.
 
-  The environment variables also contain ``$<name>`` for each project.
-  If there are multiple projects with ``$<name>`` set, they will be
-  loaded alphabetically and overrided by later loaded projects variables.
-  The current project is the last one loaded, so it takes precedence
-  over all other projects.  If a specific order is desired, a project name
-  could be prepended with letters in the order desired (e.g. ``a_project3``,
-  ``b_project2``, ``c_project1``).  Sometimes I have projects commands or
-  variables referenced in other projects.  For example, I have a **path**
-  project::
+The environment variables also contain ``$<name>`` for each project.
+If there are multiple projects with ``$<name>`` set, they will be
+loaded alphabetically and overrided by later loaded projects variables.
+The current project is the last one loaded, so it takes precedence
+over all other projects.  If a specific order is desired, a project name
+could be prepended with letters in the order desired (e.g. ``a_project3``,
+``b_project2``, ``c_project1``).  Sometimes I have projects commands or
+variables referenced in other projects.  For example, I have a **path**
+project::
 
-    $ el path
-    path                                                             $name
-     0: # ------------ PATH ------------                                         :0
-     1: removepath $*;export PATH=$PATH:$*                           $addpath    :1
-     2: export PATH=$(echo $PATH|sed -e "s;:$*;;g")                  $removepath :2
-     3: echo $PATH                                                   $p          :3
-     4:                                                                          :4
+  $ el path
+  path                                                  $name
+   0: # ------------ PATH ------------                              :0
+   1: removepath $*;export PATH=$PATH:$*                $addpath    :1
+   2: export PATH=$(echo $PATH|sed -e "s;:$*;;g")       $removepath :2
+   3: echo $PATH                                        $p          :3
+   4:                                                               :4
 
-  This allows me to add or remove PATH entries.  In some projects, there
-  are several cross-compilers built and used for different purposes.
-  The **path** project is used during initialization of a project
-  (described below).  For setting/resetting ``PATH`` when switching
-  projects or logging in the first time.
+This allows me to add or remove PATH entries.  In some projects, there
+are several cross-compilers built and used for different purposes.
+The **path** project is used during initialization of a project
+(described below).  For setting/resetting ``PATH`` when switching
+projects or logging in the first time.
 
-  **Evaluation of e slots:**
+**Evaluation of e slots:**
 
-  e builds extra commands allowing the evaluation of the *slot* values.
-  ``e#`` evaluates (executes) the *slot* value referenced at # in the
-  current shell context.  This is a powerful feature allowing creation
-  of often executed commands can be setup in a *slot*.  Not all *slots* have
-  evaluatable values, but e has no way of knowing.  So, it sets up the
-  ``e#`` command reguardless.  Because it's executed in the current shell
-  context, things like ``cd`` will work as expected (which is a large part
-  of how I use it).
+e builds extra commands allowing the evaluation of the *slot* values.
+``e#`` evaluates (executes) the *slot* value referenced at # in the
+current shell context.  This is a powerful feature allowing creation
+of often executed commands can be setup in a *slot*.  Not all *slots* have
+evaluatable values, but e has no way of knowing.  So, it sets up the
+``e#`` command reguardless.  Because it's executed in the current shell
+context, things like ``cd`` will work as expected (which is a large part
+of how I use it).
 
-  **e** also creates ``<name>`` commands referencing the names of *slots* for
-  convenience.  **e** will not allow ``<name>`` to override the normal **e**
-  commands.  The ``en #`` command will display an error message if a
-  ``<name>`` matches a an reserved **e** command.
+**e** also creates ``<name>`` commands referencing the names of *slots* for
+convenience.  **e** will not allow ``<name>`` to override the normal **e**
+commands.  The ``en #`` command will display an error message if a
+``<name>`` matches a an reserved **e** command.
 
-  Because **e** uses the shell's ``eval`` builtin, it will only evaluate
-  one or two levels of env variable replacement.  If you try more
-  then 2 levels of env variable references in *slot* values, it may
-  not work correctly.  It's a limitation of shell and portability
-  between all the shells supported.
+Because **e** uses the shell's ``eval`` builtin, it will only evaluate
+one or two levels of env variable replacement.  If you try more
+then 2 levels of env variable references in *slot* values, it may
+not work correctly.  It's a limitation of shell and portability
+between all the shells supported.
 
-  Two special *slot* names 'init' and 'deinit' will be evaluated when a
-  project is selected (init) or when a another project is selected (deinit).
-  The 'init' will also be evaluated when e is first initialized.
+Two special *slot* names 'init' and 'deinit' will be evaluated when a
+project is selected (init) or when a another project is selected (deinit).
+The 'init' will also be evaluated when e is first initialized.
 
-  A *Slot* named 'deinit' requires special care.  If any *slots* are referenced,
-  they need to be e<proj>_<name-or-e#> because of when e evaluates
-  expressions.  When an 'ep <proj>' is evaluated, several evaluations
-  occur.  Because the 'deinit' will be evaluated after the project has
-  already been changed, the e<proj>_<name-or-e#> must be used.
-  Otherwise, the 'deinit' will evaluate the new project's 'deinit' instead.
+A *Slot* named 'deinit' requires special care.  If any *slots* are referenced,
+they need to be e<proj>_<name-or-e#> because of when e evaluates
+expressions.  When an 'ep <proj>' is evaluated, several evaluations
+occur.  Because the 'deinit' will be evaluated after the project has
+already been changed, the e<proj>_<name-or-e#> must be used.
+Otherwise, the 'deinit' will evaluate the new project's 'deinit' instead.
 
-  **Other slot management commands:**
+**Other slot management commands:**
 
-  The command 'el [<project>]' will list the <project> *slots*.  If
-  <project> is not specified, 'el' will list the current project.
-  The listing shows the slot number, the value, and the name for each
-  slot.  The name is shown right justified as '($<name>)'.
+The command 'el [<project>]' will list the <project> *slots*.  If
+<project> is not specified, 'el' will list the current project.
+The listing shows the slot number, the value, and the name for each
+slot.  The name is shown right justified as '($<name>)'.
 
-  'em' command shows the *slots* that have names.  One slot per line
-  is displayed with the format $<name>,<value>.  This is useful
-  to pipe to a command or see just the current name to value mapping.
-  If '-a' is passed as an argument, this command will show all env
-  variables from all projects that are exported.
+'em' command shows the *slots* that have names.  One slot per line
+is displayed with the format $<name>,<value>.  This is useful
+to pipe to a command or see just the current name to value mapping.
+If '-a' is passed as an argument, this command will show all env
+variables from all projects that are exported.
 
-  'ex <from> <to>' exchanges slot <from> value and name with <to> value
-  and name.  It is primarily used for convenience.
+'ex <from> <to>' exchanges slot <from> value and name with <to> value
+and name.  It is primarily used for convenience.
 
-  'eu [<num>]' rotates the *slots* up <num> positions (default 1) wrapping
-  the *slots* from slot 0 to the maximum slot entries.
+'eu [<num>]' rotates the *slots* up <num> positions (default 1) wrapping
+the *slots* from slot 0 to the maximum slot entries.
 
-  'ed [<num>]' rotates the *slots* down <num> positions (default 1)
-  wrapping from slot 0 to the maximum slot entries.
+'ed [<num>]' rotates the *slots* down <num> positions (default 1)
+wrapping from slot 0 to the maximum slot entries.
 
-  **Miscellaneous commands:**
+**Miscellaneous commands:**
 
-  'ei' reinitializes all e commands, env variables from the current shell.
+'ei' reinitializes all e commands, env variables from the current shell.
 
-  'eq' removes all e commands, env variables from the current shell.
+'eq' removes all e commands, env variables from the current shell.
 
-  'eh' again shows the normal e commands available.
+'eh' again shows the normal e commands available.
 
 NOTE: the project files store *slots* one per line with the value separated
       by a ','.  When setting the value or name of a slot, they should
       not contain a ','.  This will corrupt e handling of *slots* and the
       project file may have to be edited by hand or removed altogether.
 
----------------------
-Let's see an example:
----------------------
+EXAMPLE
+=======
 
 Suppose we are working on 3 machines:  'larry', 'moe', and 'curly'.   We are
 working on a project 'stooges'.  'stooges' has a directory $HOME/proj/stooges.
@@ -216,14 +225,14 @@ This is how I would setup my e project (under bash)::
 
   line ($ <text> is shell prompt and text to execute) 
   1   $ ep -c stooges
-  2   $ ev 20 --- directories ---
+  2   $ ev 20 # --- directories ---
   3   $ ev 21 $HOME/proj/stooges
   4   $ en 21 stooges
   5   $ es 22 '$stooges/include'
   6   $ en 22 include
   7   $ es 23 src '$stooges/src'
   8   $ es 24 doc '$stooges/doc'
-  9   $ ev 25 --- ssh hosts ---
+  9   $ ev 25 # --- ssh hosts ---
   10  $ es 26 larray larry.domain.com
   11  $ es 27 moe moe.otherdomain.com
   12  $ es 28 curly curly.thirddomain.com
@@ -298,7 +307,7 @@ Line by line explanation:
 	  directories: 'eval $cin', 'cin', or 'e1'.  Take your pick.
 
 These created commands can also take parameters from the command line
-which makes it vary configurable.  For example::
+which makes it very configurable.  For example::
 
   $ smoe ls proj
 
@@ -313,40 +322,39 @@ line (# <text> is shell prompt and text to execute)::
 
   1  # el
   stooges:
-  0:                                                                - 0 -
-  1: cd $include                                                  ($cin)
-  2: cd $src                                                      ($csrc)
-  3: cd $doc                                                      ($cdoc)
-  4:                                                                - 4 -
-  5: ssh $moe                                                     ($smoe)
-  6: ssh $larry                                                   ($slarry)
-  7: ssh $curly                                                   ($scurly)
-  8:                                                                - 8 -
-  9:                                                                - 9 -
-  10:                                                               - 10 -
-  11:                                                               - 11 -
-  12:                                                               - 12 -
-  13:                                                               - 13 -
-  14:                                                               - 14 -
-  15:                                                               - 15 -
-  16:                                                               - 16 -
-  17:                                                               - 17 -
-  18:                                                               - 18 -
-  19:                                                               - 19 -
-  20: --- directories ---                                           - 20 -
-  21: /home/msg/proj/stooges                                      ($stooges)
-  22: $stooges/include                                            ($include)
-  23: $stooges/src                                                ($src)
-  24: $stooges/doc                                                ($doc)
-  25: --- ssh hosts ---                                             - 25 -
-  26: larry.domain.com                                            ($larry)
-  27: moe.otherdomain.com                                         ($moe)
-  28: curly.thirddomain.com                                       ($curly)
-  29:                                                               - 29 -
+   0:                                                               :0
+   1: cd $include                                       $cin        :1
+   2: cd $src                                           $csrc       :2
+   3: cd $doc                                           $cdoc       :3
+   4:                                                               :4
+   5: ssh $moe                                          $smoe       :5
+   6: ssh $larry                                        $slarry     :6
+   7: ssh $curly                                        $scurly     :7
+   8:                                                               :8
+   9:                                                               :9
+  10:                                                               :10
+  11:                                                               :11
+  12:                                                               :12
+  13:                                                               :13
+  14:                                                               :14
+  15:                                                               :15
+  16:                                                               :16
+  17:                                                               :17
+  18:                                                               :18
+  19:                                                               :19
+  20: --- directories ---                                           :20
+  21: /home/msg/proj/stooges                            $stooges    :21
+  22: $stooges/include                                  $include    :22
+  23: $stooges/src                                      $src        :23
+  24: $stooges/doc                                      $doc        :24
+  25: --- ssh hosts ---                                             :25
+  26: larry.domain.com                                  $larry      :26
+  27: moe.otherdomain.com                               $moe        :27
+  28: curly.thirddomain.com                             $curly      :28
+  29:                                                               :29
 
----------------
-Advanced usage:
----------------
+ADVANCED USAGE
+==============
 
 More complex argument handling can be done but it will be more shell
 specific as bash and zsh use shell functions and csh uses aliases
@@ -360,7 +368,7 @@ to pass arguments in different order:
 
 For bash and zsh::
 
-  $ es0 'echo 1 $* 3'
+  $ ev 0 'echo 1 $* 3'
  
 It's relatively simple because the who expression is single quoted.
 When e command is evaluated with 'e0 <args>' the '$*' will be replaced
@@ -368,7 +376,7 @@ with <args>.
 
 Now, for csh::
 
-  $ es0 'echo 1 \\\!* 3'
+  $ ev 0 'echo 1 \\\!* 3'
 
 The way arguments are substituted makes these operations tricky.  The
 shells will interpret them different ways.  The csh '\\\!*' was the only

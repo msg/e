@@ -160,8 +160,7 @@ string_list globfiles(const string& globs)
 
 
 // nrm - helper for rmrf below
-inline int nrm(const char *path, const struct stat *sp, int flag,
-		struct FTW *ftwp)
+inline int nrm(const char *path, const struct stat *, int flag, struct FTW *)
 {
 	if (flag == FTW_F || flag == FTW_SL)
 		return unlink(path);

@@ -234,7 +234,6 @@ done:
 	return strings;
 }
 
-
 void Slot::add_environment(void) {
 	if (value == "")
 		return;
@@ -639,6 +638,12 @@ const char *help_lines[] = {
 	CY "ei" NO ":\n\t(re)initialize environment and aliases",
 	CY "eq" NO ":\n\tremove env and aliases",
 	CY "eh" NO ":\n\tprint this help message",
+	"",
+	CY "eflags" NO ":\n\tper-project variable used to control exports",
+	"\t-e no " YL "e#" NO " flags",
+	"\t-E no " YL "<project>_e#" NO " flags",
+	"\t-p no project " YL "<name>" NO " flags",
+	"\t-P no " YL "<project>_<name>" NO " flags",
 	NULL
 };
 
